@@ -95,13 +95,6 @@ class Gateway(object):
 
         return proc_name
 
-    def _before_worker_run(self):
-        """
-        在worker运行之前做的事情
-        :return:
-        """
-        pass
-
     def _prepare_server(self):
         """
         准备server，因为fork之后就晚了
@@ -188,7 +181,6 @@ class Gateway(object):
         setproctitle.setproctitle(self._make_proc_name('gateway:worker'))
         self.worker_uuid = uuid.uuid4().hex
         self._handle_child_proc_signals()
-        self._before_worker_run()
 
         try:
             self._serve_forever()
