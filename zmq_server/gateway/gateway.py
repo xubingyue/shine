@@ -4,6 +4,7 @@
 import signal
 import sys
 import weakref
+import gevent
 import uuid
 import setproctitle
 import cPickle
@@ -117,7 +118,13 @@ class Gateway(object):
         保持运行
         :return:
         """
-        self.outer_server._serve_forever()
+        job_list = []
+        for action in [self.outer_server._serve_forever, self._fetch_results]:
+            job = gevent.spawn(action)
+            job_list.append(job)
+
+        for job in job_list:
+            job.join()
 
     def _fetch_results(self):
         """
