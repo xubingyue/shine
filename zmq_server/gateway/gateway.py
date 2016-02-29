@@ -20,6 +20,7 @@ class Gateway(object):
     outer_server = None
 
     outer_address = None
+    inner_address = None
 
     result_address_list = None
 
@@ -27,11 +28,12 @@ class Gateway(object):
         self.master = Master()
         self.outer_server = Server(box_class)
 
-    def run(self, outer_address, result_address_list, debug=None, workers=None):
+    def run(self, outer_address, inner_address, result_address, debug=None, workers=None):
         """
         启动
         :param outer_address: 外部地址 ('0.0.0.0', 9999)
-        :param result_address_list: 结果地址 [('127.0.0.1', 3688), ('192.168.1.9', 3689)]
+        :param inner_address: 内部地址 ('0.0.0.0', 10999)
+        :param result_address: 结果地址 [('127.0.0.1', 3688), ('192.168.1.9', 3689)]
         :param debug: 是否debug
         :param workers: None: 代表以单进程模式启动；数字: 代表以master-worker方式启动。
             如果为user_reloader为True，会强制赋值为None
@@ -39,8 +41,8 @@ class Gateway(object):
         """
 
         self.outer_address = outer_address
-
-        self.result_address_list = result_address_list
+        self.inner_address = inner_address
+        self.result_address_list = result_address
 
         if debug is not None:
             self.debug = debug
@@ -48,9 +50,9 @@ class Gateway(object):
         workers = 1 if workers is None else workers
 
         def run_wrapper():
-            logger.info('Running outer address: %s, result_address_list: %s, debug: %s, workers: %s',
+            logger.info('Running outer address: %s, result_address: %s, debug: %s, workers: %s',
                         outer_address,
-                        result_address_list,
+                        result_address,
                         self.debug, workers)
 
             self._prepare_server()
