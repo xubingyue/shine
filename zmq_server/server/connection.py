@@ -33,11 +33,7 @@ class Connection(object):
         elif isinstance(data, dict):
             data = self.app.box_class(data).pack()
 
-        self.app.events.before_response(self, data)
-
         ret = self.stream.write(data)
-
-        self.app.events.after_response(self, data, ret)
 
         return ret
 
