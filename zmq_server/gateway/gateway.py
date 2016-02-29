@@ -2,6 +2,7 @@
 
 
 import sys
+import gevent
 from multiprocessing import Process
 import time
 import signal
@@ -20,6 +21,10 @@ class Gateway(object):
 
     outer_server = None
 
+    outer_address = None
+
+    result_address_list = None
+
     def __init__(self, box_class):
         self.processes = []
         self.outer_server = Server(box_class)
@@ -35,6 +40,10 @@ class Gateway(object):
         :return:
         """
 
+        self.outer_address = outer_address
+
+        self.result_address_list = result_address_list
+
         if debug is not None:
             self.debug = debug
 
@@ -46,14 +55,14 @@ class Gateway(object):
                         result_address_list,
                         self.debug, workers)
 
-            self.outer_server._prepare_server(outer_address)
+            self._prepare_server()
             if workers is not None:
                 setproctitle.setproctitle(self._make_proc_name('master'))
                 # 只能在主线程里面设置signals
                 self._handle_parent_proc_signals()
                 self._fork_workers(workers)
             else:
-                self._try_serve_forever(True)
+                self._try_serve_forever()
 
         run_wrapper()
 
@@ -75,13 +84,32 @@ class Gateway(object):
     def _before_worker_run(self):
         pass
 
+    def _prepare_server(self):
+        """
+        准备server，因为fork之后就晚了
+        :return:
+        """
+        self.outer_server._prepare_server(self.outer_address)
+
+    def _serve_forever(self):
+        """
+        保持运行
+        :return:
+        """
+        job_list = []
+        for action in [self.outer_server._serve_forever,]:
+            job_list.append(gevent.spawn(action))
+
+        for job in job_list:
+            job.join()
+
     def _try_serve_forever(self):
         self._handle_child_proc_signals()
 
         self._before_worker_run()
 
         try:
-            self._outer_serve_forever()
+            self._serve_forever()
         except KeyboardInterrupt:
             pass
         except:
