@@ -78,7 +78,7 @@ class Resulter(object):
         """
 
         while 1:
-            data = self.zmq_pull_server.recv_string()
+            data = self.zmq_pull_server.recv()
 
             task = gw_pb2.Task()
             task.ParseFromString(data)
@@ -97,7 +97,7 @@ class Resulter(object):
         """
         ctx = zmq.Context()
         self.zmq_pull_server = ctx.socket(zmq.PULL)
-        self.zmq_pull_server.bind(address)
+        self.zmq_pull_server.connect(address)
 
     def _start_pub_server(self, address):
         """
