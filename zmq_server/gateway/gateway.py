@@ -29,7 +29,8 @@ class Gateway(object):
     # 准备发送到worker的queue
     task_queue = None
 
-    outer_address = None
+    outer_host = None
+    outer_port = None
     inner_address = None
     result_address = None
 
@@ -45,18 +46,20 @@ class Gateway(object):
         self.outer_server = Server(box_class)
         self.task_queue = Queue()
 
-    def run(self, outer_address, inner_address, result_address, debug=None, workers=None):
+    def run(self, outer_host, outer_port, inner_address, result_address, debug=None, workers=None):
         """
         启动
-        :param outer_address: 外部地址 ('0.0.0.0', 9999)
-        :param inner_address: 内部地址 ('0.0.0.0', 10999)
-        :param result_address: 结果地址 ('127.0.0.1', 3688)
+        :param outer_host: 外部地址 '0.0.0.0'
+        :param outer_port: 外部地址 7100
+        :param inner_address: 内部地址 tcp://127.0.0.1:8833
+        :param result_address: 结果地址 tcp://127.0.0.1:8855
         :param debug: 是否debug
         :param workers: 进程数
         :return:
         """
 
-        self.outer_address = outer_address
+        self.outer_host = outer_host
+        self.outer_port = outer_port
         self.inner_address = inner_address
         self.result_address = result_address
         self.conn_dict = dict()
@@ -68,8 +71,8 @@ class Gateway(object):
         workers = 1 if workers is None else workers
 
         def run_wrapper():
-            logger.info('Running outer_address: %s, inner_address: %s, result_address: %s, debug: %s, workers: %s',
-                        outer_address,
+            logger.info('Running outer_host: %s, outer_port: %s, inner_address: %s, result_address: %s, debug: %s, workers: %s',
+                        outer_host, outer_port,
                         inner_address,
                         result_address,
                         self.debug, workers)
@@ -105,9 +108,9 @@ class Gateway(object):
         # zmq的内部server，要在worker fork之前就准备好
         ctx = zmq.Context()
         self.inner_zmq_server = ctx.socket(zmq.PUSH)
-        self.inner_zmq_server.bind('tcp://%s:%s' % (self.inner_address[0], self.inner_address[1]))
+        self.inner_zmq_server.bind(self.inner_address)
 
-        self.outer_server._prepare_server(self.outer_address)
+        self.outer_server._prepare_server((self.outer_host, self.outer_port))
 
         self._register_server_handlers()
 
@@ -132,7 +135,7 @@ class Gateway(object):
 
         ctx = zmq.Context()
         self.result_zmq_client = ctx.socket(zmq.SUB)
-        self.result_zmq_client.connect('tcp://%s:%s' % (self.result_address[0], self.result_address[1]))
+        self.result_zmq_client.connect(self.result_address)
         self.result_zmq_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
 
         while True:
@@ -154,7 +157,7 @@ class Gateway(object):
 
         while True:
             task = self.task_queue.get()
-            self.inner_zmq_server.send(task.SerializeToString())
+            self.inner_zmq_server.send_string(task.SerializeToString())
 
     def _register_server_handlers(self):
         """
