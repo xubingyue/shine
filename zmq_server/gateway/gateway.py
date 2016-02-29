@@ -104,12 +104,7 @@ class Gateway(object):
         保持运行
         :return:
         """
-        job_list = []
-        for action in [self.outer_server._serve_forever,]:
-            job_list.append(gevent.spawn(action))
-
-        for job in job_list:
-            job.join()
+        self.outer_server._serve_forever()
 
     def _worker_run(self):
         """
