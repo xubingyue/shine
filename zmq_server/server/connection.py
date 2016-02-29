@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import gevent
+
 from .. import constants
 from ..log import logger
 
@@ -52,7 +54,9 @@ class Connection(object):
         """
         # while中判断可以保证connection_close事件只触发一次
         while not self.stream.closed():
-            self._read_message()
+            # 防止内存泄露
+            job = gevent.spawn(self._read_message)
+            job.join()
 
     def _read_message(self):
         data = self.stream.read_with_checker(self.app.stream_checker)
