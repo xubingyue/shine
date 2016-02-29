@@ -10,7 +10,7 @@ class Task(object):
     body = None
     topic = None
 
-    def __init__(self, cmd, body):
+    def __init__(self, cmd, body=None):
         """
         :param cmd:
         :param body:

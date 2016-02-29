@@ -13,6 +13,7 @@ from ..server import Server
 from ..master import Master
 from ..share.log import logger
 from ..share import constants
+from ..share.task import Task
 
 
 class Gateway(object):
@@ -132,17 +133,22 @@ class Gateway(object):
         def create_conn(conn):
             self.conn_dict[conn.id] = conn
 
+            task = Task(constants.CMD_CLIENT_CREATED)
+            self.inner_zmq_server.send_pyobj(task)
+
         @self.outer_server.close_conn
         def close_conn(conn):
             # 删除
             self.conn_dict.pop(conn.id, None)
-            task = Tas
-            # TODO 发送掉线的消息给worker
+
+            task = Task(constants.CMD_CLIENT_CLOSED)
+            self.inner_zmq_server.send_pyobj(task)
 
         @self.outer_server.handle_request
         def handle_request(conn, data):
-            # TODO 转发到worker
-            pass
+            # 转发到worker
+            task = Task(constants.CMD_CLIENT_REQ, data)
+            self.inner_zmq_server.send_pyobj(task)
 
     def _worker_run(self):
         """
