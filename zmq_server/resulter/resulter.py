@@ -21,8 +21,8 @@ class Resulter(object):
     debug = False
 
     proc_mgr = None
-    inner_zmq_server = None
-    result_zmq_client = None
+    zmq_pull_server = None
+    zmq_pub_client = None
 
     # 准备发送到worker的queue
     task_queue = None
@@ -69,7 +69,7 @@ class Resulter(object):
         workers = 1 if workers is None else workers
 
         def run_wrapper():
-            logger.info('Running outer_host: %s, outer_port: %s, inner_address: %s, result_address: %s, debug: %s, workers: %s',
+            logger.info('Running outer_host: %s, outer_port: %s, inner_address_list: %s, result_address: %s, debug: %s, workers: %s',
                         outer_host, outer_port,
                         inner_address,
                         result_address,
@@ -105,8 +105,8 @@ class Resulter(object):
         """
         # zmq的内部server，要在worker fork之前就准备好
         ctx = zmq.Context()
-        self.inner_zmq_server = ctx.socket(zmq.PUSH)
-        self.inner_zmq_server.bind(self.inner_address)
+        self.zmq_pull_server = ctx.socket(zmq.PUSH)
+        self.zmq_pull_server.bind(self.inner_address)
 
         self.outer_server._prepare_server((self.outer_host, self.outer_port))
 
@@ -132,12 +132,12 @@ class Resulter(object):
         """
 
         ctx = zmq.Context()
-        self.result_zmq_client = ctx.socket(zmq.SUB)
-        self.result_zmq_client.connect(self.result_address)
-        self.result_zmq_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
+        self.zmq_pub_client = ctx.socket(zmq.SUB)
+        self.zmq_pub_client.connect(self.result_address)
+        self.zmq_pub_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
 
         while True:
-            msg_part_list = self.result_zmq_client.recv_multipart()
+            msg_part_list = self.zmq_pub_client.recv_multipart()
 
             for msg_part in msg_part_list:
                 task = gw_pb2.Task()
@@ -155,7 +155,7 @@ class Resulter(object):
 
         while True:
             task = self.task_queue.get()
-            self.inner_zmq_server.send_string(task.SerializeToString())
+            self.zmq_pull_server.send_string(task.SerializeToString())
 
     def _register_server_handlers(self):
         """

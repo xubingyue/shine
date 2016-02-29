@@ -31,7 +31,7 @@ class Gateway(object):
 
     outer_host = None
     outer_port = None
-    inner_address = None
+    inner_address_list = None
     result_address = None
 
     # worker唯一标示
@@ -46,21 +46,20 @@ class Gateway(object):
         self.outer_server = Server(box_class)
         self.task_queue = Queue()
 
-    def run(self, outer_host, outer_port, inner_address, result_address, debug=None, workers=None):
+    def run(self, outer_host, outer_port, inner_address_list, result_address, debug=None):
         """
         启动
         :param outer_host: 外部地址 '0.0.0.0'
         :param outer_port: 外部地址 7100
-        :param inner_address: 内部地址 tcp://127.0.0.1:8833
+        :param inner_address_list: 内部地址列表 [tcp://127.0.0.1:8833, ]，worker参数不需要了，就是内部地址列表的个数
         :param result_address: 结果地址 tcp://127.0.0.1:8855
         :param debug: 是否debug
-        :param workers: 进程数
         :return:
         """
 
         self.outer_host = outer_host
         self.outer_port = outer_port
-        self.inner_address = inner_address
+        self.inner_address_list = inner_address_list
         self.result_address = result_address
         self.conn_dict = dict()
         self.user_dict = weakref.WeakValueDictionary()
@@ -68,12 +67,12 @@ class Gateway(object):
         if debug is not None:
             self.debug = debug
 
-        workers = 1 if workers is None else workers
+        workers = len(self.inner_address_list)
 
         def run_wrapper():
-            logger.info('Running outer_host: %s, outer_port: %s, inner_address: %s, result_address: %s, debug: %s, workers: %s',
+            logger.info('Running outer_host: %s, outer_port: %s, inner_address_list: %s, result_address: %s, debug: %s, workers: %s',
                         outer_host, outer_port,
-                        inner_address,
+                        inner_address_list,
                         result_address,
                         self.debug, workers)
 
@@ -105,13 +104,7 @@ class Gateway(object):
         准备server，因为fork之后就晚了
         :return:
         """
-        # zmq的内部server，要在worker fork之前就准备好
-        ctx = zmq.Context()
-        self.zmq_inner_server = ctx.socket(zmq.PUSH)
-        self.zmq_inner_server.bind(self.inner_address)
-
         self.outer_server._prepare_server((self.outer_host, self.outer_port))
-
         self._register_server_handlers()
 
     def _serve_forever(self):
@@ -126,6 +119,15 @@ class Gateway(object):
 
         for job in job_list:
             job.join()
+
+    def _start_innder_server(self, address):
+        """
+        zmq的内部server
+        每个worker绑定的地址都要不一样
+        """
+        ctx = zmq.Context()
+        self.zmq_inner_server = ctx.socket(zmq.PUSH)
+        self.zmq_inner_server.bind(address)
 
     def _fetch_results(self):
         """
@@ -201,14 +203,15 @@ class Gateway(object):
             task.data = data
             self.task_queue.put(task)
 
-    def _worker_run(self):
+    def _worker_run(self, index):
         """
         在worker里面执行的
         :return:
         """
-        setproctitle.setproctitle(self._make_proc_name('gateway:worker'))
+        setproctitle.setproctitle(self._make_proc_name('gateway:worker:%s' % index))
         self.worker_uuid = uuid.uuid4().bytes
         self._handle_child_proc_signals()
+        self._start_innder_server(self.inner_address_list[index])
 
         try:
             self._serve_forever()

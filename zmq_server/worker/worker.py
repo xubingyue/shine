@@ -42,7 +42,7 @@ class Worker(RoutesMixin, AppEventsMixin):
     stop_timeout = None
 
     # 连接到worker分配
-    worker_address = None
+    worker_address_list = None
 
     # 将结果发送过去
     result_address = None
@@ -60,10 +60,10 @@ class Worker(RoutesMixin, AppEventsMixin):
     def register_blueprint(self, blueprint):
         blueprint.register_to_app(self)
 
-    def run(self, worker_address, result_address, debug=None, workers=None):
+    def run(self, worker_address_list, result_address, debug=None, workers=None):
         """
 
-        :param worker_address:  tcp://127.0.0.1:7100
+        :param worker_address_list:  tcp://127.0.0.1:7100
         :param result_address: tcp://127.0.0.1:7200
         :param debug:
         :param workers:
@@ -71,7 +71,7 @@ class Worker(RoutesMixin, AppEventsMixin):
         """
         self._validate_cmds()
 
-        self.worker_address = worker_address
+        self.worker_address_list = worker_address_list
         self.result_address = result_address
 
         if debug is not None:
@@ -81,8 +81,8 @@ class Worker(RoutesMixin, AppEventsMixin):
 
         if os.getenv(constants.WORKER_ENV_KEY) != 'true':
             # 主进程
-            logger.info('Connect to server on worker_address: %s, result_address: %s, debug: %s, workers: %s',
-                        self.worker_address, self.result_address, self.debug, workers)
+            logger.info('Connect to server on worker_address_list: %s, result_address: %s, debug: %s, workers: %s',
+                        self.worker_address_list, self.result_address, self.debug, workers)
 
             # 设置进程名
             setproctitle.setproctitle(self._make_proc_name('master'))
@@ -248,7 +248,7 @@ class Worker(RoutesMixin, AppEventsMixin):
         signal.signal(signal.SIGHUP, safe_stop_handler)
 
     def _serve_forever(self):
-        conn = self.connection_class(self, self.worker_address)
+        conn = self.connection_class(self, self.worker_address_list)
         conn.run()
 
     def _connect_to_result_server(self):

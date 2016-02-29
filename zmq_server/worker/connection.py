@@ -13,16 +13,17 @@ class Connection(object):
 
     job_info = None
 
-    address = None
+    address_list = None
     zmq_client = None
 
-    def __init__(self, app, address):
+    def __init__(self, app, address_list):
         self.app = app
-        self.address = address
+        self.address_list = address_list
 
         ctx = zmq.Context()
         self.zmq_client = ctx.socket(zmq.PUSH)
-        self.zmq_client.connect(self.address)
+        for address in address_list:
+            self.zmq_client.connect(address)
 
     def run(self):
         thread.start_new_thread(self._monitor_job_timeout, ())
@@ -99,7 +100,7 @@ class Connection(object):
     def _on_connection_close(self):
         # 链接被关闭的回调
 
-        logger.error('connection closed, address: %s', self.address)
+        logger.error('connection closed, address_list: %s', self.address_list)
 
         for bp in self.app.blueprints:
             bp.events.close_app_conn(self)
