@@ -8,7 +8,6 @@ import gevent
 from gevent.queue import Queue
 import uuid
 import setproctitle
-import cPickle
 
 import zmq.green as zmq  # for gevent
 
