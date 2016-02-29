@@ -69,7 +69,7 @@ class Resulter(object):
         workers = 1 if workers is None else workers
 
         def run_wrapper():
-            logger.info('Running outer_host: %s, outer_port: %s, inner_address_list: %s, result_address: %s, debug: %s, workers: %s',
+            logger.info('Running outer_host: %s, outer_port: %s, inner_address_list: %s, result_address_list: %s, debug: %s, workers: %s',
                         outer_host, outer_port,
                         inner_address,
                         result_address,

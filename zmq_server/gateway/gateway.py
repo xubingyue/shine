@@ -32,7 +32,7 @@ class Gateway(object):
     outer_host = None
     outer_port = None
     inner_address_list = None
-    result_address = None
+    result_address_list = None
 
     # worker唯一标示
     worker_uuid = None
@@ -46,13 +46,13 @@ class Gateway(object):
         self.outer_server = Server(box_class)
         self.task_queue = Queue()
 
-    def run(self, outer_host, outer_port, inner_address_list, result_address, debug=None):
+    def run(self, outer_host, outer_port, inner_address_list, result_address_list, debug=None):
         """
         启动
         :param outer_host: 外部地址 '0.0.0.0'
         :param outer_port: 外部地址 7100
         :param inner_address_list: 内部地址列表 [tcp://127.0.0.1:8833, ]，worker参数不需要了，就是内部地址列表的个数
-        :param result_address: 结果地址 tcp://127.0.0.1:8855
+        :param result_address_list: 结果地址 tcp://127.0.0.1:8855
         :param debug: 是否debug
         :return:
         """
@@ -60,7 +60,7 @@ class Gateway(object):
         self.outer_host = outer_host
         self.outer_port = outer_port
         self.inner_address_list = inner_address_list
-        self.result_address = result_address
+        self.result_address_list = result_address_list
         self.conn_dict = dict()
         self.user_dict = weakref.WeakValueDictionary()
 
@@ -70,10 +70,10 @@ class Gateway(object):
         workers = len(self.inner_address_list)
 
         def run_wrapper():
-            logger.info('Running outer_host: %s, outer_port: %s, inner_address_list: %s, result_address: %s, debug: %s, workers: %s',
+            logger.info('Running outer_host: %s, outer_port: %s, inner_address_list: %s, result_address_list: %s, debug: %s, workers: %s',
                         outer_host, outer_port,
                         inner_address_list,
-                        result_address,
+                        result_address_list,
                         self.debug, workers)
 
             self._prepare_server()
@@ -137,7 +137,8 @@ class Gateway(object):
 
         ctx = zmq.Context()
         self.zmq_result_client = ctx.socket(zmq.SUB)
-        self.zmq_result_client.connect(self.result_address)
+        for address in self.result_address_list:
+            self.zmq_result_client.connect(address)
         self.zmq_result_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
 
         while True:
