@@ -87,3 +87,6 @@ class Connection(object):
         except Exception, e:
             logger.error('view_func raise exception. data: %s, e: %s',
                          data, e, exc_info=True)
+
+    def __repr__(self):
+        return str(self.id)
