@@ -16,7 +16,7 @@ class Connection(object):
     uid = None
 
     def __init__(self, app, stream, address):
-        self.id = uuid.uuid4().hex
+        self.id = uuid.uuid4().bytes
         self.app = app
         self.stream = stream
         self.address = address

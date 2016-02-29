@@ -15,8 +15,7 @@ import zmq.green as zmq  # for gevent
 from ..server import Server
 from ..master import Master
 from ..share.log import logger
-from ..share import constants
-from ..share.task import Task
+from ..share import constants, gw_pb2
 
 
 class Gateway(object):
@@ -141,7 +140,8 @@ class Gateway(object):
             msg_part_list = self.result_zmq_client.recv_multipart()
 
             for msg_part in msg_part_list:
-                task = cPickle.loads(msg_part[1])
+                task = gw_pb2.Task()
+                task = task.ParseFromString(msg_part[1])
 
                 conn = self.conn_dict.get(task.client_id)
                 if conn:
@@ -155,7 +155,7 @@ class Gateway(object):
 
         while True:
             task = self.task_queue.get()
-            self.inner_zmq_server.send_pyobj(task)
+            self.inner_zmq_server.send(task.SerializeToString())
 
     def _register_server_handlers(self):
         """
@@ -168,7 +168,11 @@ class Gateway(object):
             logger.debug('conn.id:  %s', conn.id)
             self.conn_dict[conn.id] = conn
 
-            task = Task(conn.id, self.worker_uuid, constants.CMD_CLIENT_CREATED)
+            task = gw_pb2.Task()
+            task.client_id = conn.id
+            task.proc_id = self.worker_uuid
+            task.cmd = constants.CMD_CLIENT_CREATED
+
             self.task_queue.put(task)
 
         @self.outer_server.close_conn
@@ -177,14 +181,22 @@ class Gateway(object):
             logger.debug('conn.id:  %s', conn.id)
             self.conn_dict.pop(conn.id, None)
 
-            task = Task(conn.id, self.worker_uuid, constants.CMD_CLIENT_CLOSED)
+            task = gw_pb2.Task()
+            task.client_id = conn.id
+            task.proc_id = self.worker_uuid
+            task.cmd = constants.CMD_CLIENT_CLOSED
+
             self.task_queue.put(task)
 
         @self.outer_server.handle_request
         def handle_request(conn, data):
             # 转发到worker
             logger.debug('conn.id:  %s, data: %r', conn.id, data)
-            task = Task(conn.id, self.worker_uuid, constants.CMD_CLIENT_REQ, data)
+            task = gw_pb2.Task()
+            task.client_id = conn.id
+            task.proc_id = self.worker_uuid
+            task.cmd = constants.CMD_CLIENT_REQ
+            task.data = data
             self.task_queue.put(task)
 
     def _worker_run(self):
@@ -193,7 +205,7 @@ class Gateway(object):
         :return:
         """
         setproctitle.setproctitle(self._make_proc_name('gateway:worker'))
-        self.worker_uuid = uuid.uuid4().hex
+        self.worker_uuid = uuid.uuid4().bytes
         self._handle_child_proc_signals()
 
         try:
