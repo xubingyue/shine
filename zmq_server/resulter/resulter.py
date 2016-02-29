@@ -11,20 +11,18 @@ import gevent
 from gevent.queue import Queue
 import zmq.green as zmq  # for gevent
 
-from zmq_server.gateway.server import Server
 from ..share.proc_mgr import ProcMgr
 from ..share.log import logger
 from ..share import constants, gw_pb2
 
 
-class Gateway(object):
+class Resulter(object):
     name = constants.NAME
     debug = False
 
     proc_mgr = None
-    outer_server = None
-    zmq_inner_server = None
-    zmq_result_client = None
+    inner_zmq_server = None
+    result_zmq_client = None
 
     # 准备发送到worker的queue
     task_queue = None
@@ -107,8 +105,8 @@ class Gateway(object):
         """
         # zmq的内部server，要在worker fork之前就准备好
         ctx = zmq.Context()
-        self.zmq_inner_server = ctx.socket(zmq.PUSH)
-        self.zmq_inner_server.bind(self.inner_address)
+        self.inner_zmq_server = ctx.socket(zmq.PUSH)
+        self.inner_zmq_server.bind(self.inner_address)
 
         self.outer_server._prepare_server((self.outer_host, self.outer_port))
 
@@ -134,12 +132,12 @@ class Gateway(object):
         """
 
         ctx = zmq.Context()
-        self.zmq_result_client = ctx.socket(zmq.SUB)
-        self.zmq_result_client.connect(self.result_address)
-        self.zmq_result_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
+        self.result_zmq_client = ctx.socket(zmq.SUB)
+        self.result_zmq_client.connect(self.result_address)
+        self.result_zmq_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
 
         while True:
-            msg_part_list = self.zmq_result_client.recv_multipart()
+            msg_part_list = self.result_zmq_client.recv_multipart()
 
             for msg_part in msg_part_list:
                 task = gw_pb2.Task()
@@ -157,7 +155,7 @@ class Gateway(object):
 
         while True:
             task = self.task_queue.get()
-            self.zmq_inner_server.send_string(task.SerializeToString())
+            self.inner_zmq_server.send_string(task.SerializeToString())
 
     def _register_server_handlers(self):
         """
