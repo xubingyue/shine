@@ -13,7 +13,7 @@ from google.protobuf import descriptor_pb2
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='gw.proto',
   package='zmq_server.gw_proto',
-  serialized_pb='\n\x08gw.proto\x12\x13zmq_server.gw_proto\"E\n\x04Task\x12\x11\n\tclient_id\x18\x01 \x01(\x0c\x12\x0f\n\x07proc_id\x18\x02 \x01(\x0c\x12\x0b\n\x03\x63md\x18\x03 \x01(\x05\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\"s\n\nRspToUsers\x12\x31\n\x04rows\x18\x01 \x03(\x0b\x32#.zmq_server.gw_proto.RspToUsers.Row\x1a\x32\n\x03Row\x12\x0c\n\x04uids\x18\x01 \x03(\x03\x12\x0b\n\x03\x62uf\x18\x02 \x01(\x0c\x12\x10\n\x08userdata\x18\x03 \x01(\x03\",\n\nCloseUsers\x12\x0c\n\x04uids\x18\x01 \x03(\x03\x12\x10\n\x08userdata\x18\x02 \x01(\x03\x42\'\n\x1c\x63n.vimer.zmq_server.gw_protoB\x07GWProto')
+  serialized_pb='\n\x08gw.proto\x12\x13zmq_server.gw_proto\"j\n\x04Task\x12\x11\n\tclient_id\x18\x01 \x01(\x0c\x12\x0f\n\x07proc_id\x18\x02 \x01(\x0c\x12\x0b\n\x03\x63md\x18\x03 \x01(\x05\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\x12\x0e\n\x03uid\x18\x05 \x01(\x03:\x01\x30\x12\x13\n\x08userdata\x18\x06 \x01(\x03:\x01\x30\"s\n\nRspToUsers\x12\x31\n\x04rows\x18\x01 \x03(\x0b\x32#.zmq_server.gw_proto.RspToUsers.Row\x1a\x32\n\x03Row\x12\x0c\n\x04uids\x18\x01 \x03(\x03\x12\x0b\n\x03\x62uf\x18\x02 \x01(\x0c\x12\x10\n\x08userdata\x18\x03 \x01(\x03\",\n\nCloseUsers\x12\x0c\n\x04uids\x18\x01 \x03(\x03\x12\x10\n\x08userdata\x18\x02 \x01(\x03\x42\'\n\x1c\x63n.vimer.zmq_server.gw_protoB\x07GWProto')
 
 
 
@@ -53,6 +53,20 @@ _TASK = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='uid', full_name='zmq_server.gw_proto.Task.uid', index=4,
+      number=5, type=3, cpp_type=2, label=1,
+      has_default_value=True, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='userdata', full_name='zmq_server.gw_proto.Task.userdata', index=5,
+      number=6, type=3, cpp_type=2, label=1,
+      has_default_value=True, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -63,7 +77,7 @@ _TASK = _descriptor.Descriptor(
   is_extendable=False,
   extension_ranges=[],
   serialized_start=33,
-  serialized_end=102,
+  serialized_end=139,
 )
 
 
@@ -104,8 +118,8 @@ _RSPTOUSERS_ROW = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=169,
-  serialized_end=219,
+  serialized_start=206,
+  serialized_end=256,
 )
 
 _RSPTOUSERS = _descriptor.Descriptor(
@@ -131,8 +145,8 @@ _RSPTOUSERS = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=104,
-  serialized_end=219,
+  serialized_start=141,
+  serialized_end=256,
 )
 
 
@@ -166,8 +180,8 @@ _CLOSEUSERS = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=221,
-  serialized_end=265,
+  serialized_start=258,
+  serialized_end=302,
 )
 
 _RSPTOUSERS_ROW.containing_type = _RSPTOUSERS;

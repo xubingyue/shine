@@ -104,12 +104,14 @@ class Request(object):
         elif isinstance(data, dict):
             data = self.box.map(data).pack()
 
-        gw_box = self.task.map(dict(
-            cmd=constants.CMD_WRITE_TO_CLIENT,
-            body=data,
-        ))
+        rsp = Task()
+        # 就可以直接通过proc_id和client_id来进行识别了
+        rsp.client_id = rsp.client_id
+        rsp.proc_id = rsp.proc_id
+        rsp.cmd = constants.CMD_WRITE_TO_CLIENT
+        rsp.data = data
 
-        succ = self.conn.write(gw_box.pack())
+        succ = self.conn.write(rsp.SerializeToString())
 
         if succ:
             # 如果发送成功，就标记为已经回应
@@ -144,53 +146,51 @@ class Request(object):
             row.userdata = userdata or 0
             row.uids.extend(uids)
 
-        gw_box = Task()
-        gw_box.cmd = constants.CMD_WRITE_TO_USERS
-        gw_box.body = msg.SerializeToString()
+        rsp = Task()
+        rsp.cmd = constants.CMD_WRITE_TO_USERS
+        rsp.body = msg.SerializeToString()
 
-        return self.conn.write(gw_box.pack())
+        return self.conn.write(rsp.SerializeToString())
 
     def close_client(self):
-        gw_box = self.task.map(dict(
-            cmd=constants.CMD_CLOSE_CLIENT,
-        ))
+        task = Task()
+        task.cmd = constants.CMD_CLOSE_CLIENT
 
-        return self.conn.write(gw_box.pack())
+        return self.conn.write(task.SerializeToString())
 
     def close_users(self, uids, userdata=None):
         msg = CloseUsers()
         msg.uids.extend(uids)
         msg.userdata = userdata or 0
 
-        gw_box = Task()
-        gw_box.cmd = constants.CMD_CLOSE_USERS
-        gw_box.body = msg.SerializeToString()
+        task = Task()
+        task.cmd = constants.CMD_CLOSE_USERS
+        task.body = msg.SerializeToString()
 
-        return self.conn.write(gw_box.pack())
+        return self.conn.write(task.SerializeToString())
 
     def login_client(self, uid, userdata=None):
-        gw_box = self.task.map(dict(
-            cmd=constants.CMD_LOGIN_CLIENT,
-            uid=uid,
-            userdata=userdata or 0,
-        ))
 
-        return self.conn.write(gw_box.pack())
+        task = Task()
+        task.cmd = constants.CMD_LOGIN_CLIENT
+        task.uid = uid
+        task.userdata = userdata or 0
+
+        return self.conn.write(task.SerializeToString())
 
     def logout_client(self):
-        gw_box = self.task.map(dict(
-            cmd=constants.CMD_LOGOUT_CLIENT,
-        ))
+        task = Task()
+        task.cmd = constants.CMD_LOGOUT_CLIENT
 
-        return self.conn.write(gw_box.pack())
+        return self.conn.write(task.SerializeToString())
 
     def write_to_worker(self, data):
         """
         透传到worker进行处理
         """
 
-        gw_box = Task()
-        gw_box.cmd = constants.CMD_WRITE_TO_WORKER
+        task = Task()
+        task.cmd = constants.CMD_WRITE_TO_WORKER
 
         if isinstance(data, self.app.box_class):
             # 打包
@@ -198,9 +198,9 @@ class Request(object):
         elif isinstance(data, dict):
             data = self.app.box_class(data).pack()
 
-        gw_box.body = data
+        task.body = data
 
-        return self.conn.write(gw_box.pack())
+        return self.conn.write(task.SerializeToString())
 
     def interrupt(self, data=None):
         """

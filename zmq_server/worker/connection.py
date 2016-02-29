@@ -13,18 +13,16 @@ class Connection(object):
 
     job_info = None
 
-    host = None
-    port = None
+    address = None
     zmq_client = None
 
-    def __init__(self, app, host, port):
+    def __init__(self, app, address):
         self.app = app
-        self.host = host
-        self.port = port
+        self.address = address
 
         ctx = zmq.Context()
         self.zmq_client = ctx.socket(zmq.PUSH)
-        self.zmq_client.connect('tcp://%s:%s' % (host, port))
+        self.zmq_client.connect(self.address)
 
     def run(self):
         thread.start_new_thread(self._monitor_job_timeout, ())
@@ -64,6 +62,7 @@ class Connection(object):
 
     def write(self, data):
         """
+        格式可以支持到frame
         发送数据    True: 成功   else: 失败
         """
         if self.closed():
@@ -75,7 +74,7 @@ class Connection(object):
         for bp in self.app.blueprints:
             bp.events.before_app_response(self, data)
 
-        ret = self.zmq_client.send_string(data)
+        ret = self.app.zmq_result_client.send(data)
         if not ret:
             logger.error('connection write fail. data: %r', data)
 
@@ -100,7 +99,7 @@ class Connection(object):
     def _on_connection_close(self):
         # 链接被关闭的回调
 
-        logger.error('connection closed, host: %s, port: %s', self.host, self.port)
+        logger.error('connection closed, address: %s', self.address)
 
         for bp in self.app.blueprints:
             bp.events.close_app_conn(self)

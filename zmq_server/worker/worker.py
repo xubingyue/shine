@@ -41,11 +41,14 @@ class Worker(RoutesMixin, AppEventsMixin):
     # 停止子进程超时(秒). 使用 TERM 进行停止时，如果超时未停止会发送KILL信号
     stop_timeout = None
 
+    # 连接到worker分配
+    worker_address = None
+
+    # 将结果发送过去
+    result_address = None
+
     # 连接到result server的连接
     zmq_result_client = None
-
-    host = None
-    port = None
 
     def __init__(self, box_class):
         RoutesMixin.__init__(self)
@@ -57,11 +60,19 @@ class Worker(RoutesMixin, AppEventsMixin):
     def register_blueprint(self, blueprint):
         blueprint.register_to_app(self)
 
-    def run(self, gateway_address, result_address, debug=None, workers=None):
+    def run(self, worker_address, result_address, debug=None, workers=None):
+        """
+
+        :param worker_address:  tcp://127.0.0.1:7100
+        :param result_address: tcp://127.0.0.1:7200
+        :param debug:
+        :param workers:
+        :return:
+        """
         self._validate_cmds()
 
-        self.host = host
-        self.port = port
+        self.worker_address = worker_address
+        self.result_address = result_address
 
         if debug is not None:
             self.debug = debug
@@ -70,8 +81,8 @@ class Worker(RoutesMixin, AppEventsMixin):
 
         if os.getenv(constants.WORKER_ENV_KEY) != 'true':
             # 主进程
-            logger.info('Connect to server on %s:%s, debug: %s, workers: %s',
-                        host, port, self.debug, workers)
+            logger.info('Connect to server on worker_address: %s, result_address: %s, debug: %s, workers: %s',
+                        self.worker_address, self.result_address, self.debug, workers)
 
             # 设置进程名
             setproctitle.setproctitle(self._make_proc_name('master'))
@@ -114,6 +125,9 @@ class Worker(RoutesMixin, AppEventsMixin):
         assert not duplicate_cmds, 'duplicate cmds: %s' % duplicate_cmds
 
     def _before_worker_run(self):
+        # 连接到结果server
+        self._connect_to_result_server()
+
         self.events.create_worker()
         for bp in self.blueprints:
             bp.events.create_app_worker()
@@ -234,5 +248,15 @@ class Worker(RoutesMixin, AppEventsMixin):
         signal.signal(signal.SIGHUP, safe_stop_handler)
 
     def _serve_forever(self):
-        conn = self.connection_class(self, self.host, self.port)
+        conn = self.connection_class(self, self.worker_address)
         conn.run()
+
+    def _connect_to_result_server(self):
+        """
+        连接到结果服务器
+        :return:
+        """
+
+        ctx = zmq.Context()
+        self.zmq_result_client = ctx.socket(zmq.PUSH)
+        self.zmq_result_client.connect(self.result_address)
