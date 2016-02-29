@@ -27,6 +27,9 @@ class Server(object):
     backlog = constants.SERVER_BACKLOG
     server = None
 
+    def __init__(self, box_class):
+        self.box_class = box_class
+
     def _make_proc_name(self, subtitle):
         """
         获取进程名称
@@ -47,10 +50,10 @@ class Server(object):
             self, self.stream_class(sock, use_gevent=True), address
         ).handle()
 
-    def _prepare_outer_server(self, outer_address):
+    def _prepare_server(self, outer_address):
         self.server = self.server_class(outer_address, handle=self._handle_stream, backlog=self.backlog)
         self.server.start()
 
-    def _outer_serve_forever(self):
+    def _serve_forever(self):
         self.server.serve_forever()
 

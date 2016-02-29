@@ -5,18 +5,9 @@ import sys
 from multiprocessing import Process
 import time
 import signal
-from collections import Counter
 import setproctitle
 
-import gevent
-from gevent.server import StreamServer
-import functools
-from netkit.stream import Stream
-
-from .connection import Connection
-from .request import Request
-
-
+from ..server import Server
 from ..log import logger
 from .. import constants
 
@@ -26,26 +17,12 @@ class Gateway(object):
     name = constants.NAME
     processes = None
     debug = False
-    got_first_request = False
-    blueprints = None
 
-    server_class = StreamServer
-    connection_class = Connection
-    request_class = Request
-    stream_class = Stream
+    outer_server = None
 
-    box_class = None
-    stream_checker = None
-
-    backlog = constants.SERVER_BACKLOG
-    server = None
-
-    def __init__(self):
+    def __init__(self, box_class):
         self.processes = []
-        self.blueprints = list()
-
-    def register_blueprint(self, blueprint):
-        blueprint.register_to_app(self)
+        self.outer_server = Server(box_class)
 
     def run(self, outer_address, result_address_list, debug=None, workers=None):
         """
@@ -69,7 +46,7 @@ class Gateway(object):
                         result_address_list,
                         self.debug, workers)
 
-            self._prepare_outer_server(outer_address)
+            self.outer_server._prepare_server(outer_address)
             if workers is not None:
                 setproctitle.setproctitle(self._make_proc_name('master'))
                 # 只能在主线程里面设置signals
@@ -98,13 +75,8 @@ class Gateway(object):
     def _before_worker_run(self):
         pass
 
-    def _try_serve_forever(self, main_process):
-        # 无论是否有master，这里都是worker
-        if not main_process:
-            setproctitle.setproctitle(self._make_proc_name('worker'))
-            self._handle_child_proc_signals()
-        else:
-            setproctitle.setproctitle(self._make_proc_name('main'))
+    def _try_serve_forever(self):
+        self._handle_child_proc_signals()
 
         self._before_worker_run()
 
@@ -172,16 +144,3 @@ class Gateway(object):
         signal.signal(signal.SIGINT, exit_handler)
         signal.signal(signal.SIGQUIT, exit_handler)
         signal.signal(signal.SIGTERM, exit_handler)
-
-    def _handle_stream(self, sock, address):
-        self.connection_class(
-            self, self.stream_class(sock, use_gevent=True), address
-        ).handle()
-
-    def _prepare_outer_server(self, outer_address):
-        self.server = self.server_class(outer_address, handle=self._handle_stream, backlog=self.backlog)
-        self.server.start()
-
-    def _outer_serve_forever(self):
-        self.server.serve_forever()
-
