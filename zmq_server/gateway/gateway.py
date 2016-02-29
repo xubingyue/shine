@@ -66,8 +66,9 @@ class Gateway(object):
         workers = 1 if workers is None else workers
 
         def run_wrapper():
-            logger.info('Running outer address: %s, result_address: %s, debug: %s, workers: %s',
+            logger.info('Running outer_address: %s, inner_address: %s, result_address: %s, debug: %s, workers: %s',
                         outer_address,
+                        inner_address,
                         result_address,
                         self.debug, workers)
 
