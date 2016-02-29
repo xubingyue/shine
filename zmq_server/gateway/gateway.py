@@ -5,6 +5,7 @@ import signal
 import sys
 import weakref
 import gevent
+from gevent.queue import Queue
 import uuid
 import setproctitle
 import cPickle
@@ -27,6 +28,9 @@ class Gateway(object):
     inner_zmq_server = None
     result_zmq_client = None
 
+    # 准备发送到worker的queue
+    task_queue = None
+
     outer_address = None
     inner_address = None
     result_address = None
@@ -41,6 +45,7 @@ class Gateway(object):
     def __init__(self, box_class):
         self.master = Master()
         self.outer_server = Server(box_class)
+        self.task_queue = Queue()
 
     def run(self, outer_address, inner_address, result_address, debug=None, workers=None):
         """
@@ -114,7 +119,7 @@ class Gateway(object):
         :return:
         """
         job_list = []
-        for action in [self.outer_server._serve_forever, self._fetch_results]:
+        for action in [self.outer_server._serve_forever, self._fetch_results, self._send_task_to_worker]:
             job = gevent.spawn(action)
             job_list.append(job)
 
@@ -142,6 +147,16 @@ class Gateway(object):
                 if conn:
                     conn.write(task.data)
 
+    def _send_task_to_worker(self):
+        """
+        将任务发送到worker
+        :return:
+        """
+
+        while True:
+            task = self.task_queue.get()
+            self.inner_zmq_server.send_pyobj(task)
+
     def _register_server_handlers(self):
         """
         注册server的一些回调
@@ -154,7 +169,7 @@ class Gateway(object):
             self.conn_dict[conn.id] = conn
 
             task = Task(conn.id, self.worker_uuid, constants.CMD_CLIENT_CREATED)
-            self.inner_zmq_server.send_pyobj(task)
+            self.task_queue.put(task)
 
         @self.outer_server.close_conn
         def close_conn(conn):
@@ -163,14 +178,14 @@ class Gateway(object):
             self.conn_dict.pop(conn.id, None)
 
             task = Task(conn.id, self.worker_uuid, constants.CMD_CLIENT_CLOSED)
-            self.inner_zmq_server.send_pyobj(task)
+            self.task_queue.put(task)
 
         @self.outer_server.handle_request
         def handle_request(conn, data):
             # 转发到worker
             logger.debug('conn.id:  %s, data: %s', conn.id, data)
             task = Task(conn.id, self.worker_uuid, constants.CMD_CLIENT_REQ, data)
-            self.inner_zmq_server.send_pyobj(task)
+            self.task_queue.put(task)
 
     def _worker_run(self):
         """
