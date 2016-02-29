@@ -45,7 +45,7 @@ class Worker(RoutesMixin, AppEventsMixin):
     worker_address_list = None
 
     # 将结果发送过去
-    result_address = None
+    result_address_list = None
 
     # 连接到result server的连接
     zmq_result_client = None
@@ -60,11 +60,11 @@ class Worker(RoutesMixin, AppEventsMixin):
     def register_blueprint(self, blueprint):
         blueprint.register_to_app(self)
 
-    def run(self, worker_address_list, result_address, debug=None, workers=None):
+    def run(self, worker_address_list, result_address_list, debug=None, workers=None):
         """
 
         :param worker_address_list:  tcp://127.0.0.1:7100
-        :param result_address: tcp://127.0.0.1:7200
+        :param result_address_list: tcp://127.0.0.1:7200
         :param debug:
         :param workers:
         :return:
@@ -72,7 +72,7 @@ class Worker(RoutesMixin, AppEventsMixin):
         self._validate_cmds()
 
         self.worker_address_list = worker_address_list
-        self.result_address = result_address
+        self.result_address_list = result_address_list
 
         if debug is not None:
             self.debug = debug
@@ -82,7 +82,7 @@ class Worker(RoutesMixin, AppEventsMixin):
         if os.getenv(constants.WORKER_ENV_KEY) != 'true':
             # 主进程
             logger.info('Connect to server on worker_address_list: %s, result_address_list: %s, debug: %s, workers: %s',
-                        self.worker_address_list, self.result_address, self.debug, workers)
+                        self.worker_address_list, self.result_address_list, self.debug, workers)
 
             # 设置进程名
             setproctitle.setproctitle(self._make_proc_name('master'))
@@ -259,4 +259,5 @@ class Worker(RoutesMixin, AppEventsMixin):
 
         ctx = zmq.Context()
         self.zmq_result_client = ctx.socket(zmq.PUSH)
-        self.zmq_result_client.connect(self.result_address)
+        for address in self.result_address_list:
+            self.zmq_result_client.connect(address)
