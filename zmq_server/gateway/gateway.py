@@ -183,7 +183,7 @@ class Gateway(object):
         @self.outer_server.handle_request
         def handle_request(conn, data):
             # 转发到worker
-            logger.debug('conn.id:  %s, data: %s', conn.id, data)
+            logger.debug('conn.id:  %s, data: %r', conn.id, data)
             task = Task(conn.id, self.worker_uuid, constants.CMD_CLIENT_REQ, data)
             self.task_queue.put(task)
 

@@ -28,6 +28,7 @@ class Server(AppEventsMixin):
     def __init__(self, box_class):
         AppEventsMixin.__init__(self)
         self.box_class = box_class
+        self.stream_checker = self.box_class().check
 
     def _make_proc_name(self, subtitle):
         """

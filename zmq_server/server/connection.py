@@ -12,6 +12,9 @@ class Connection(object):
     # 唯一ID
     id = None
 
+    # 登录之后的用户ID
+    uid = None
+
     def __init__(self, app, stream, address):
         self.id = uuid.uuid4().hex
         self.app = app
