@@ -49,8 +49,7 @@ class Gateway(object):
         :param inner_address: 内部地址 ('0.0.0.0', 10999)
         :param result_address: 结果地址 ('127.0.0.1', 3688)
         :param debug: 是否debug
-        :param workers: None: 代表以单进程模式启动；数字: 代表以master-worker方式启动。
-            如果为user_reloader为True，会强制赋值为None
+        :param workers: 进程数
         :return:
         """
 
