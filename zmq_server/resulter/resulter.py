@@ -3,20 +3,14 @@
 
 import signal
 import sys
-import weakref
-import uuid
 import setproctitle
-
-import gevent
-from gevent.queue import Queue
-import zmq.green as zmq  # for gevent
-
+import zmq
 from ..share.proc_mgr import ProcMgr
 from ..share.log import logger
 from ..share import constants, gw_pb2
 
 
-class Resulter(object):
+class Gateway(object):
     name = constants.NAME
     debug = False
 
@@ -24,59 +18,36 @@ class Resulter(object):
     zmq_pull_server = None
     zmq_pub_client = None
 
-    # 准备发送到worker的queue
-    task_queue = None
+    pull_address_list = None
+    pub_address_list = None
 
-    outer_host = None
-    outer_port = None
-    inner_address = None
-    result_address = None
-
-    # worker唯一标示
-    worker_uuid = None
-    # 连接ID->conn
-    conn_dict = None
-    # 用户ID->conn
-    user_dict = None
-
-    def __init__(self, box_class):
+    def __init__(self):
         self.proc_mgr = ProcMgr()
-        self.outer_server = Server(box_class)
-        self.task_queue = Queue()
 
-    def run(self, outer_host, outer_port, inner_address, result_address, debug=None, workers=None):
+    def run(self, pull_address_list, pub_address_list, debug=None):
         """
         启动
-        :param outer_host: 外部地址 '0.0.0.0'
-        :param outer_port: 外部地址 7100
-        :param inner_address: 内部地址 tcp://127.0.0.1:8833
-        :param result_address: 结果地址 tcp://127.0.0.1:8855
+        :param pull_address_list: 内部地址列表 [tcp://127.0.0.1:8833, ]，worker参数不需要了，就是内部地址列表的个数
+        :param pub_address_list: 结果地址列表 [tcp://127.0.0.1:8855, ]
         :param debug: 是否debug
-        :param workers: 进程数
         :return:
         """
 
-        self.outer_host = outer_host
-        self.outer_port = outer_port
-        self.inner_address = inner_address
-        self.result_address = result_address
-        self.conn_dict = dict()
-        self.user_dict = weakref.WeakValueDictionary()
+        self.pull_address_list = pull_address_list
+        self.pub_address_list = pub_address_list
 
         if debug is not None:
             self.debug = debug
 
-        workers = 1 if workers is None else workers
+        workers = len(self.pull_address_list)
 
         def run_wrapper():
-            logger.info('Running outer_host: %s, outer_port: %s, inner_address_list: %s, result_address_list: %s, debug: %s, workers: %s',
-                        outer_host, outer_port,
-                        inner_address,
-                        result_address,
+            logger.info('Running pull_address_list: %s, pub_address_list: %s, debug: %s, workers: %s',
+                        pull_address_list,
+                        pub_address_list,
                         self.debug, workers)
 
-            self._prepare_server()
-            setproctitle.setproctitle(self._make_proc_name('gateway:master'))
+            setproctitle.setproctitle(self._make_proc_name('resulter:master'))
             # 只能在主线程里面设置signals
             self._handle_parent_proc_signals()
             self.proc_mgr.fork_workers(workers, self._worker_run)
@@ -98,115 +69,53 @@ class Resulter(object):
 
         return proc_name
 
-    def _prepare_server(self):
-        """
-        准备server，因为fork之后就晚了
-        :return:
-        """
-        # zmq的内部server，要在worker fork之前就准备好
-        ctx = zmq.Context()
-        self.zmq_pull_server = ctx.socket(zmq.PUSH)
-        self.zmq_pull_server.bind(self.inner_address)
-
-        self.outer_server._prepare_server((self.outer_host, self.outer_port))
-
-        self._register_server_handlers()
-
     def _serve_forever(self):
         """
         保持运行
         :return:
         """
-        job_list = []
-        for action in [self.outer_server._serve_forever, self._fetch_results, self._send_task_to_worker]:
-            job = gevent.spawn(action)
-            job_list.append(job)
 
-        for job in job_list:
-            job.join()
+        while 1:
+            data = self.zmq_pull_server.recv_string()
 
-    def _fetch_results(self):
+            task = gw_pb2.Task()
+            task.ParseFromString(data)
+
+            # TODO 先只处理write_to_client的方式
+            if task.cmd == constants.CMD_WRITE_TO_CLIENT:
+                # 原样处理过去
+                self.zmq_pub_client.send(
+                    (task.proc_id, data)
+                )
+
+    def _start_pull_server(self, address):
         """
-        从result server那拿数据
-        :return:
+        zmq的pull server
+        每个worker绑定的地址都要不一样
         """
-
         ctx = zmq.Context()
-        self.zmq_pub_client = ctx.socket(zmq.SUB)
-        self.zmq_pub_client.connect(self.result_address)
-        self.zmq_pub_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
+        self.zmq_pull_server = ctx.socket(zmq.PULL)
+        self.zmq_pull_server.bind(address)
 
-        while True:
-            msg_part_list = self.zmq_pub_client.recv_multipart()
-
-            for msg_part in msg_part_list:
-                task = gw_pb2.Task()
-                task = task.ParseFromString(msg_part[1])
-
-                conn = self.conn_dict.get(task.client_id)
-                if conn:
-                    conn.write(task.data)
-
-    def _send_task_to_worker(self):
+    def _start_pub_server(self, address):
         """
-        将任务发送到worker
-        :return:
+        zmq的pub server
+        每个worker绑定的地址都要不一样
         """
+        ctx = zmq.Context()
+        self.zmq_pull_server = ctx.socket(zmq.PUB)
+        self.zmq_pull_server.bind(address)
 
-        while True:
-            task = self.task_queue.get()
-            self.zmq_pull_server.send_string(task.SerializeToString())
-
-    def _register_server_handlers(self):
-        """
-        注册server的一些回调
-        :return:
-        """
-
-        @self.outer_server.create_conn
-        def create_conn(conn):
-            logger.debug('conn.id: %r', conn.id)
-            self.conn_dict[conn.id] = conn
-
-            task = gw_pb2.Task()
-            task.client_id = conn.id
-            task.proc_id = self.worker_uuid
-            task.cmd = constants.CMD_CLIENT_CREATED
-
-            self.task_queue.put(task)
-
-        @self.outer_server.close_conn
-        def close_conn(conn):
-            # 删除
-            logger.debug('conn.id: %r', conn.id)
-            self.conn_dict.pop(conn.id, None)
-
-            task = gw_pb2.Task()
-            task.client_id = conn.id
-            task.proc_id = self.worker_uuid
-            task.cmd = constants.CMD_CLIENT_CLOSED
-
-            self.task_queue.put(task)
-
-        @self.outer_server.handle_request
-        def handle_request(conn, data):
-            # 转发到worker
-            logger.debug('conn.id: %r, data: %r', conn.id, data)
-            task = gw_pb2.Task()
-            task.client_id = conn.id
-            task.proc_id = self.worker_uuid
-            task.cmd = constants.CMD_CLIENT_REQ
-            task.data = data
-            self.task_queue.put(task)
-
-    def _worker_run(self):
+    def _worker_run(self, index):
         """
         在worker里面执行的
         :return:
         """
-        setproctitle.setproctitle(self._make_proc_name('gateway:worker'))
-        self.worker_uuid = uuid.uuid4().bytes
+        setproctitle.setproctitle(self._make_proc_name('resulter:worker:%s' % index))
         self._handle_child_proc_signals()
+
+        self._start_pull_server(self.pull_address_list[index])
+        self._start_pub_server(self.pub_address_list[index])
 
         try:
             self._serve_forever()

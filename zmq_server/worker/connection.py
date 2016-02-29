@@ -75,7 +75,7 @@ class Connection(object):
         for bp in self.app.blueprints:
             bp.events.before_app_response(self, data)
 
-        ret = self.app.zmq_result_client.send(data)
+        ret = self.app.zmq_result_client.send_string(data)
         if not ret:
             logger.error('connection write fail. data: %r', data)
 

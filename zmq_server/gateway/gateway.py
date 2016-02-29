@@ -52,7 +52,7 @@ class Gateway(object):
         :param outer_host: 外部地址 '0.0.0.0'
         :param outer_port: 外部地址 7100
         :param inner_address_list: 内部地址列表 [tcp://127.0.0.1:8833, ]，worker参数不需要了，就是内部地址列表的个数
-        :param result_address_list: 结果地址 tcp://127.0.0.1:8855
+        :param result_address_list: 结果地址列表 [tcp://127.0.0.1:8855, ]
         :param debug: 是否debug
         :return:
         """
@@ -70,7 +70,7 @@ class Gateway(object):
         workers = len(self.inner_address_list)
 
         def run_wrapper():
-            logger.info('Running outer_host: %s, outer_port: %s, inner_address_list: %s, result_address_list: %s, debug: %s, workers: %s',
+            logger.info('Running outer_host: %s, outer_port: %s, pull_address_list: %s, pub_address_list: %s, debug: %s, workers: %s',
                         outer_host, outer_port,
                         inner_address_list,
                         result_address_list,
