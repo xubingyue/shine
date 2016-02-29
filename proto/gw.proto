@@ -1,0 +1,27 @@
+package zmq_server.gw_proto;
+
+option java_package="cn.vimer.zmq_server.gw_proto";
+option java_outer_classname="GWProto";
+
+// 封装的Task
+message Task {
+    optional bytes client_id = 1;       // 连接ID
+    optional bytes proc_id = 2;         // 进程ID
+    optional int32 cmd = 3;             // 命令字
+    optional bytes data = 4;            // 数据
+}
+
+message RspToUsers {
+    message Row {
+        repeated int64 uids = 1;   // 发送用户列表
+        optional bytes buf = 2;
+        optional int64 userdata = 3; // 过滤userdata
+    }
+
+    repeated Row rows = 1;
+}
+
+message CloseUsers {
+    repeated int64 uids = 1;
+    optional int64 userdata = 2; // 过滤userdata
+}
