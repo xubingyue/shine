@@ -6,7 +6,6 @@ from gevent.server import StreamServer
 from netkit.stream import Stream
 
 from .connection import Connection
-from .request import Request
 
 
 from .. import constants
@@ -18,7 +17,6 @@ class Server(object):
 
     server_class = StreamServer
     connection_class = Connection
-    request_class = Request
     stream_class = Stream
 
     box_class = None

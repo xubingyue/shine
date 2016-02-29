@@ -3,9 +3,11 @@
 
 import signal
 import sys
-import gevent
-import setproctitle
 import weakref
+import gevent
+import zmq.green as zmq  # for gevent
+import uuid
+import setproctitle
 
 from ..server import Server
 from ..master import Master
@@ -19,11 +21,15 @@ class Gateway(object):
 
     master = None
     outer_server = None
+    inner_zmq_server = None
+    result_zmq_client = None
 
     outer_address = None
     inner_address = None
     result_address = None
 
+    # worker唯一标示
+    worker_uuid = None
     # 连接ID->conn
     conn_dict = None
     # 用户ID->conn
@@ -48,7 +54,7 @@ class Gateway(object):
         self.outer_address = outer_address
         self.inner_address = inner_address
         self.result_address = result_address
-        self.conn_dict = weakref.WeakValueDictionary()
+        self.conn_dict = dict()
         self.user_dict = weakref.WeakValueDictionary()
 
         if debug is not None:
@@ -97,6 +103,11 @@ class Gateway(object):
         准备server，因为fork之后就晚了
         :return:
         """
+        # zmq的内部server，要在worker fork之前就准备好
+        ctx = zmq.Context()
+        self.inner_zmq_server = ctx.socket(zmq.PUSH)
+        self.inner_zmq_server.bind('tcp://%s:%s' % (self.inner_address[0], self.inner_address[1]))
+
         self.outer_server._prepare_server(self.outer_address)
 
     def _serve_forever(self):
@@ -104,7 +115,33 @@ class Gateway(object):
         保持运行
         :return:
         """
+        ctx = zmq.Context()
+        self.result_zmq_client = ctx.socket(zmq.SUB)
+        self.result_zmq_client.connect('tcp://%s:%s' % (self.result_address[0], self.result_address[1]))
+        self.result_zmq_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
+
         self.outer_server._serve_forever()
+
+    def _regiser_server_handlers(self):
+        """
+        注册server的一些回调
+        :return:
+        """
+
+        @self.outer_server.create_conn
+        def create_conn(conn):
+            self.conn_dict[conn.id] = conn
+
+        @self.outer_server.close_conn
+        def close_conn(conn):
+            # 删除
+            self.conn_dict.pop(conn.id, None)
+            # TODO 发送掉线的消息给worker
+
+        @self.outer_server.handle_request
+        def handle_request(conn, data):
+            # TODO 转发到worker
+            pass
 
     def _worker_run(self):
         """
@@ -112,9 +149,8 @@ class Gateway(object):
         :return:
         """
         setproctitle.setproctitle(self._make_proc_name('gateway:worker'))
-
+        self.worker_uuid = uuid.uuid4().hex
         self._handle_child_proc_signals()
-
         self._before_worker_run()
 
         try:

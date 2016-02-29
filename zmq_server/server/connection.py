@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
 
 import gevent
+import uuid
 
 from .. import constants
 from ..log import logger
 
 
 class Connection(object):
+
+    # 唯一ID
+    id = None
+
     def __init__(self, app, stream, address):
+        self.id = uuid.uuid4().hex
         self.app = app
         self.stream = stream
         self.address = address
@@ -76,38 +82,8 @@ class Connection(object):
         """
         数据获取结束
         """
-        request = self.app.request_class(self, data)
-        self._handle_request(request)
-
-    def _handle_request(self, request):
-        """
-        出现任何异常的时候，服务器不再主动关闭连接
-        """
-
-        if not request.is_valid:
-            return False
-
-        if not request.view_func:
-            logger.error('cmd invalid. request: %s' % request)
-            request.write(dict(ret=constants.RET_INVALID_CMD))
-            return False
-
-        self.app.events.before_request(request)
-
-        if request.interrupted:
-            # 业务要求中断
-            return True
-
-        view_func_exc = None
-
         try:
-            self.app.events.handle_request(request)
+            self.app.events.handle_request(self, data)
         except Exception, e:
-            logger.error('view_func raise exception. request: %s, e: %s',
-                         request, e, exc_info=True)
-            view_func_exc = e
-            request.write(dict(ret=constants.RET_INTERNAL))
-
-        self.app.events.after_request(request, view_func_exc)
-
-        return True
+            logger.error('view_func raise exception. data: %s, e: %s',
+                         data, e, exc_info=True)
