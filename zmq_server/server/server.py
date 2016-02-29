@@ -6,11 +6,12 @@ import sys
 from gevent.server import StreamServer
 from netkit.stream import Stream
 
+from mixins import AppEventsMixin
 from .connection import Connection
-from zmq_server.share import constants
+from ..share import constants
 
 
-class Server(object):
+class Server(AppEventsMixin):
     enable = True
     name = constants.NAME
 
@@ -25,6 +26,7 @@ class Server(object):
     server = None
 
     def __init__(self, box_class):
+        AppEventsMixin.__init__(self)
         self.box_class = box_class
 
     def _make_proc_name(self, subtitle):

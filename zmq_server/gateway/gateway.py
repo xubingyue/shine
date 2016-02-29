@@ -114,6 +114,8 @@ class Gateway(object):
 
         self.outer_server._prepare_server(self.outer_address)
 
+        self._register_server_handlers()
+
     def _serve_forever(self):
         """
         保持运行
@@ -148,7 +150,7 @@ class Gateway(object):
                 if conn:
                     conn.write(task.data)
 
-    def _regiser_server_handlers(self):
+    def _register_server_handlers(self):
         """
         注册server的一些回调
         :return:
