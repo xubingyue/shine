@@ -33,6 +33,8 @@ class Resulter(object):
         :return:
         """
 
+        assert len(pull_address_list) == len(pub_address_list)
+
         self.pull_address_list = pull_address_list
         self.pub_address_list = pub_address_list
 
