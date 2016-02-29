@@ -133,7 +133,7 @@ class Gateway(object):
         def create_conn(conn):
             self.conn_dict[conn.id] = conn
 
-            task = Task(constants.CMD_CLIENT_CREATED)
+            task = Task(conn.id, self.worker_uuid, constants.CMD_CLIENT_CREATED)
             self.inner_zmq_server.send_pyobj(task)
 
         @self.outer_server.close_conn
@@ -141,13 +141,13 @@ class Gateway(object):
             # 删除
             self.conn_dict.pop(conn.id, None)
 
-            task = Task(constants.CMD_CLIENT_CLOSED)
+            task = Task(conn.id, self.worker_uuid, constants.CMD_CLIENT_CLOSED)
             self.inner_zmq_server.send_pyobj(task)
 
         @self.outer_server.handle_request
         def handle_request(conn, data):
             # 转发到worker
-            task = Task(constants.CMD_CLIENT_REQ, data)
+            task = Task(conn.id, self.worker_uuid, constants.CMD_CLIENT_REQ, data)
             self.inner_zmq_server.send_pyobj(task)
 
     def _worker_run(self):
