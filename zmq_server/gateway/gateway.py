@@ -63,10 +63,10 @@ class Gateway(object):
                         self.debug, workers)
 
             self._prepare_server()
-            setproctitle.setproctitle(self._make_proc_name('master'))
+            setproctitle.setproctitle(self._make_proc_name('gateway:master'))
             # 只能在主线程里面设置signals
             self._handle_parent_proc_signals()
-            self.master.fork_workers(workers, self._try_serve_forever)
+            self.master.fork_workers(workers, self._run_worker)
 
         run_wrapper()
 
@@ -86,6 +86,10 @@ class Gateway(object):
         return proc_name
 
     def _before_worker_run(self):
+        """
+        在worker运行之前做的事情
+        :return:
+        """
         pass
 
     def _prepare_server(self):
@@ -107,7 +111,13 @@ class Gateway(object):
         for job in job_list:
             job.join()
 
-    def _try_serve_forever(self):
+    def _run_worker(self):
+        """
+        在worker里面执行的
+        :return:
+        """
+        setproctitle.setproctitle(self._make_proc_name('gateway:worker'))
+
         self._handle_child_proc_signals()
 
         self._before_worker_run()
