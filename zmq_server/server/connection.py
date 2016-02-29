@@ -4,7 +4,7 @@ import uuid
 
 import gevent
 
-from zmq_server.share.log import logger
+from ..share.log import logger
 
 
 class Connection(object):
