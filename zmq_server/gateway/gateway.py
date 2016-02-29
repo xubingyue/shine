@@ -6,6 +6,7 @@ import sys
 import weakref
 import uuid
 import setproctitle
+import cPickle
 
 import zmq.green as zmq  # for gevent
 
@@ -116,12 +117,28 @@ class Gateway(object):
         保持运行
         :return:
         """
+        self.outer_server._serve_forever()
+
+    def _fetch_results(self):
+        """
+        从result server那拿数据
+        :return:
+        """
+
         ctx = zmq.Context()
         self.result_zmq_client = ctx.socket(zmq.SUB)
         self.result_zmq_client.connect('tcp://%s:%s' % (self.result_address[0], self.result_address[1]))
         self.result_zmq_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
 
-        self.outer_server._serve_forever()
+        while True:
+            msg_part_list = self.result_zmq_client.recv_multipart()
+
+            for msg_part in msg_part_list:
+                task = cPickle.loads(msg_part[1])
+
+                conn = self.conn_dict.get(task.client_id)
+                if conn:
+                    conn.write(task.data)
 
     def _regiser_server_handlers(self):
         """

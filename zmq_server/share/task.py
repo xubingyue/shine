@@ -9,17 +9,17 @@ class Task(object):
     client_id = None
     proc_id = None
     cmd = None
-    body = None
+    data = None
     topic = None
 
-    def __init__(self, client_id, proc_id, cmd, body=None):
+    def __init__(self, client_id, proc_id, cmd, data=None):
         """
         :param cmd:
-        :param body:
+        :param data:
         :return:
         """
 
         self.client_id = None
         self.proc_id = None
         self.cmd = cmd
-        self.body = body
+        self.data = data
