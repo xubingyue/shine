@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import functools
-from ..log import logger
+
+from zmq_server.share.log import logger
 
 
 def safe_call(func, *args, **kwargs):

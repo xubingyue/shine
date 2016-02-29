@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import gevent
 import uuid
 
-from .. import constants
-from ..log import logger
+import gevent
+
+from zmq_server.share.log import logger
 
 
 class Connection(object):

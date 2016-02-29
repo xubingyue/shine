@@ -4,15 +4,15 @@
 import signal
 import sys
 import weakref
-import gevent
-import zmq.green as zmq  # for gevent
 import uuid
 import setproctitle
 
+import zmq.green as zmq  # for gevent
+
 from ..server import Server
 from ..master import Master
-from ..log import logger
-from .. import constants
+from ..share.log import logger
+from ..share import constants
 
 
 class Gateway(object):
@@ -136,6 +136,7 @@ class Gateway(object):
         def close_conn(conn):
             # 删除
             self.conn_dict.pop(conn.id, None)
+            task = Tas
             # TODO 发送掉线的消息给worker
 
         @self.outer_server.handle_request

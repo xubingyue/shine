@@ -2,13 +2,12 @@
 
 
 import sys
+
 from gevent.server import StreamServer
 from netkit.stream import Stream
 
 from .connection import Connection
-
-
-from .. import constants
+from zmq_server.share import constants
 
 
 class Server(object):
