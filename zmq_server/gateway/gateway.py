@@ -5,6 +5,7 @@ import signal
 import sys
 import gevent
 import setproctitle
+import weakref
 
 from ..server import Server
 from ..master import Master
@@ -21,8 +22,12 @@ class Gateway(object):
 
     outer_address = None
     inner_address = None
+    result_address = None
 
-    result_address_list = None
+    # 连接ID->conn
+    conn_dict = None
+    # 用户ID->conn
+    user_dict = None
 
     def __init__(self, box_class):
         self.master = Master()
@@ -33,7 +38,7 @@ class Gateway(object):
         启动
         :param outer_address: 外部地址 ('0.0.0.0', 9999)
         :param inner_address: 内部地址 ('0.0.0.0', 10999)
-        :param result_address: 结果地址 [('127.0.0.1', 3688), ('192.168.1.9', 3689)]
+        :param result_address: 结果地址 ('127.0.0.1', 3688)
         :param debug: 是否debug
         :param workers: None: 代表以单进程模式启动；数字: 代表以master-worker方式启动。
             如果为user_reloader为True，会强制赋值为None
@@ -42,7 +47,9 @@ class Gateway(object):
 
         self.outer_address = outer_address
         self.inner_address = inner_address
-        self.result_address_list = result_address
+        self.result_address = result_address
+        self.conn_dict = weakref.WeakValueDictionary()
+        self.user_dict = weakref.WeakValueDictionary()
 
         if debug is not None:
             self.debug = debug
