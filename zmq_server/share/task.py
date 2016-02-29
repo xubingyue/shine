@@ -10,7 +10,6 @@ class Task(object):
     proc_id = None
     cmd = None
     data = None
-    topic = None
 
     def __init__(self, client_id, proc_id, cmd, data=None):
         """
