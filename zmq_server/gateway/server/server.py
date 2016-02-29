@@ -8,7 +8,7 @@ from netkit.stream import Stream
 
 from mixins import AppEventsMixin
 from .connection import Connection
-from ..share import constants
+from ...share import constants
 
 
 class Server(AppEventsMixin):

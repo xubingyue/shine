@@ -4,15 +4,15 @@
 import signal
 import sys
 import weakref
-import gevent
-from gevent.queue import Queue
 import uuid
 import setproctitle
 
+import gevent
+from gevent.queue import Queue
 import zmq.green as zmq  # for gevent
 
-from ..server import Server
-from ..master import Master
+from zmq_server.gateway.server import Server
+from ..share.proc_mgr import ProcMgr
 from ..share.log import logger
 from ..share import constants, gw_pb2
 
@@ -21,7 +21,7 @@ class Gateway(object):
     name = constants.NAME
     debug = False
 
-    master = None
+    proc_mgr = None
     outer_server = None
     inner_zmq_server = None
     result_zmq_client = None
@@ -42,7 +42,7 @@ class Gateway(object):
     user_dict = None
 
     def __init__(self, box_class):
-        self.master = Master()
+        self.proc_mgr = ProcMgr()
         self.outer_server = Server(box_class)
         self.task_queue = Queue()
 
@@ -81,7 +81,7 @@ class Gateway(object):
             setproctitle.setproctitle(self._make_proc_name('gateway:master'))
             # 只能在主线程里面设置signals
             self._handle_parent_proc_signals()
-            self.master.fork_workers(workers, self._worker_run)
+            self.proc_mgr.fork_workers(workers, self._worker_run)
 
         run_wrapper()
 
@@ -219,12 +219,12 @@ class Gateway(object):
 
     def _handle_parent_proc_signals(self):
         def exit_handler(signum, frame):
-            self.master.enable = False
+            self.proc_mgr.enable = False
 
             # 如果是终端直接CTRL-C，子进程自然会在父进程之后收到INT信号，不需要再写代码发送
             # 如果直接kill -INT $parent_pid，子进程不会自动收到INT
             # 所以这里可能会导致重复发送的问题，重复发送会导致一些子进程异常，所以在子进程内部有做重复处理判断。
-            self.master.terminate_all()
+            self.proc_mgr.terminate_all()
 
         # INT, QUIT, TERM为强制结束
         signal.signal(signal.SIGINT, exit_handler)
@@ -234,8 +234,8 @@ class Gateway(object):
     def _handle_child_proc_signals(self):
         def exit_handler(signum, frame):
             # 防止重复处理KeyboardInterrupt，导致抛出异常
-            if self.master.enable:
-                self.master.enable = False
+            if self.proc_mgr.enable:
+                self.proc_mgr.enable = False
                 raise KeyboardInterrupt
 
         # 强制结束，抛出异常终止程序进行

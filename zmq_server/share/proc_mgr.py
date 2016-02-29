@@ -4,7 +4,7 @@ from multiprocessing import Process
 import time
 
 
-class Master(object):
+class ProcMgr(object):
     enable = True
     processes = None
 

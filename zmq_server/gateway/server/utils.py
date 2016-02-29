@@ -2,7 +2,7 @@
 
 import functools
 
-from ..share.log import logger
+from ...share.log import logger
 
 
 def safe_call(func, *args, **kwargs):
