@@ -10,7 +10,7 @@ from ..share.log import logger
 from ..share import constants, gw_pb2
 
 
-class Gateway(object):
+class Resulter(object):
     name = constants.NAME
     debug = False
 

@@ -7,9 +7,10 @@ from netkit.contrib.tcp_client import TcpClient
 from netkit.box import Box
 
 import time
+import constants
 
 def handle(uid):
-    client = TcpClient(Box, '127.0.0.1', 7100, timeout=None)
+    client = TcpClient(Box, constants.GATEWAY_OUTER_HOST, constants.GATEWAY_OUTER_PORT, timeout=None)
     client.connect()
 
     box = Box()

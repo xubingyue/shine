@@ -8,13 +8,15 @@ sys.path.insert(0, '../../')
 
 from netkit.box import Box
 from zmq_server import Gateway
+import constants
 
 
 gateway = Gateway(Box)
 
 if __name__ == '__main__':
     gateway.run(
-        '127.0.0.1', 7100,
-        ['tcp://127.0.0.1:7101', 'tcp://127.0.0.1:7102'],
-        'tcp://127.0.0.1:7201',
+        constants.GATEWAY_OUTER_HOST,
+        constants.GATEWAY_OUTER_PORT,
+        constants.GATEWAY_WORKER_ADDRESS_LIST,
+        constants.RESULTER_PUB_ADDRESS_LIST,
     )
