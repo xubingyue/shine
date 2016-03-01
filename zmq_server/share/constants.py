@@ -54,7 +54,7 @@ DEFAULT_CONFIG = {
     # gateway, forwarder 需要
     'USER_REDIS_URL': None,  # 用来存储用户ID->proc_id的映射
     # gateway, forwarder 需要
-    'USER_REDIS_KEY_TPL': 'user:%s',  # 存储的键模板
+    'USER_REDIS_KEY_TPL': '%s',  # 存储的键模板
     # gateway 需要
     'USER_REDIS_MAXAGE': None,  # 最长存储的秒数，因为有可能有些用户的数据没有正常清空
 }
