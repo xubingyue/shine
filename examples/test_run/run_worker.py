@@ -5,11 +5,21 @@ import sys
 sys.path.insert(0, '../../')
 
 from netkit.box import Box
-from zmq_server import Worker
+from zmq_server import Worker, logger
 import constants
 
 
 worker = Worker(Box)
+
+
+@worker.create_client
+def create_client(request):
+    logger.debug(request)
+
+
+@worker.close_client
+def close_client(request):
+    logger.debug(request)
 
 
 @worker.route(2)

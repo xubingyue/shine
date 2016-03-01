@@ -223,4 +223,4 @@ class Request(object):
             return True
 
     def __repr__(self):
-        return 'cmd: %r, endpoint: %s, task: %r' % (self.cmd, self.endpoint, self.task)
+        return 'cmd: %r, endpoint: %s, task:\n%s' % (self.cmd, self.endpoint, self.task)
