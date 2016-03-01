@@ -20,9 +20,8 @@ from ..share.config import ConfigAttribute, Config
 
 class Gateway(object):
     name = constants.NAME
-    debug = ConfigAttribute('DEBUG')
-
     config = None
+    debug = ConfigAttribute('DEBUG')
 
     proc_mgr = None
     outer_server = None
@@ -32,22 +31,13 @@ class Gateway(object):
     # 准备发送到worker的queue
     task_queue = None
 
-    outer_host = None
-    outer_port = None
-    inner_address_list = None
-    forwarder_address_list = None
-
     # worker唯一标示
-    worker_uuid = None
+    proc_id = None
     # 连接ID->conn
     conn_dict = None
     # 用户ID->conn
     user_dict = None
 
-    user_redis_url = None
-    user_redis_key_tpl = None
-    # 最长存储的秒数，因为有可能有些用户的数据没有正常清空
-    user_redis_maxage = None
     # 存储存储userid->proc_id
     user_redis = None
 
@@ -56,37 +46,22 @@ class Gateway(object):
         self.proc_mgr = ProcMgr()
         self.outer_server = Server(box_class)
         self.task_queue = Queue()
+        self.conn_dict = dict()
+        self.user_dict = weakref.WeakValueDictionary()
 
-    def run(self, outer_host, outer_port, inner_address_list, forwarder_address_list,
-            user_redis_url=None, user_redis_key_tpl=None, user_redis_maxage=None,
-            debug=None):
+    def run(self, debug=None):
         """
         启动
-        :param outer_host: 外部地址 '0.0.0.0'
-        :param outer_port: 外部地址 7100
-        :param inner_address_list: 内部地址列表 [tcp://127.0.0.1:8833, ]，worker参数不需要了，就是内部地址列表的个数
-        :param forwarder_address_list: 结果地址列表 [tcp://127.0.0.1:8855, ]
-        :param user_redis_url: redis存储的url，不传的话，相当于不走分布式
-        :param user_redis_key_tpl: redis存储的key模板，如 'zmq:user:%s'
         :param debug: 是否debug
         :return:
         """
 
-        self.outer_host = outer_host
-        self.outer_port = outer_port
-        self.inner_address_list = inner_address_list
-        self.forwarder_address_list = forwarder_address_list
-        self.user_redis_url = user_redis_url
-        self.user_redis_key_tpl = user_redis_key_tpl
-        self.user_redis_maxage = user_redis_maxage
-        self.conn_dict = dict()
-        self.user_dict = weakref.WeakValueDictionary()
+        if debug is not None:
+            self.debug = debug
+
         if self.user_redis_url:
             import redis
             self.user_redis = redis.from_url(self.user_redis_url)
-
-        if debug is not None:
-            self.debug = debug
 
         workers = len(self.inner_address_list)
 
@@ -159,7 +134,7 @@ class Gateway(object):
         self.forwarder_client = ctx.socket(zmq.SUB)
         for address in self.forwarder_address_list:
             self.forwarder_client.connect(address)
-        self.forwarder_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
+        self.forwarder_client.setsockopt(zmq.SUBSCRIBE, self.proc_id)
 
         while True:
             topic, msg = self.forwarder_client.recv_multipart()
@@ -211,7 +186,7 @@ class Gateway(object):
 
                 # 后写入存储
                 if self.user_redis:
-                    self.user_redis.set(self.user_redis_key_tpl % conn.uid, self.worker_uuid, ex=self.user_redis_maxage)
+                    self.user_redis.set(self.user_redis_key_tpl % conn.uid, self.proc_id, ex=self.user_redis_maxage)
 
         elif task.cmd == constants.CMD_LOGOUT_CLIENT:
             conn = self.conn_dict.get(task.client_id)
@@ -265,7 +240,7 @@ class Gateway(object):
             self.conn_dict[conn.id] = conn
 
             task = gw_pb2.Task()
-            task.proc_id = self.worker_uuid
+            task.proc_id = self.proc_id
             task.client_id = conn.id
             task.client_ip = conn.address[0]
             task.cmd = constants.CMD_CLIENT_CREATED
@@ -285,7 +260,7 @@ class Gateway(object):
                 conn.uid = conn.userdata = None
 
             task = gw_pb2.Task()
-            task.proc_id = self.worker_uuid
+            task.proc_id = self.proc_id
             task.client_id = conn.id
             task.client_ip = conn.address[0]
             task.cmd = constants.CMD_CLIENT_CLOSED
@@ -297,7 +272,7 @@ class Gateway(object):
             # 转发到worker
             logger.debug('conn.id: %r, data: %r', conn.id, data)
             task = gw_pb2.Task()
-            task.proc_id = self.worker_uuid
+            task.proc_id = self.proc_id
             task.client_id = conn.id
             task.client_ip = conn.address[0]
             task.cmd = constants.CMD_CLIENT_REQ
@@ -310,7 +285,7 @@ class Gateway(object):
         :return:
         """
         setproctitle.setproctitle(self._make_proc_name('gateway:worker:%s' % index))
-        self.worker_uuid = uuid.uuid4().bytes
+        self.proc_id = uuid.uuid4().bytes
         self._handle_child_proc_signals()
         self._register_outer_server_handlers()
         self._start_inner_server(self.inner_address_list[index])
