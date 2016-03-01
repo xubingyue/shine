@@ -10,11 +10,7 @@ import constants
 
 
 forwarder = Forwarder()
+forwarder.config.from_object(constants)
 
 if __name__ == '__main__':
-    forwarder.run(
-        constants.FORWARDER_INPUT_ADDRESS_LIST,
-        constants.FORWARDER_OUTPUT_ADDRESS_LIST,
-        'redis://127.0.0.1:6379/0',
-        'zmq:user:%s',
-    )
+    forwarder.run()
