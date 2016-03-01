@@ -109,7 +109,6 @@ class Forwarder(object):
 
             logger.debug('task:\n%s', task)
 
-            # TODO 先只处理write_to_client的方式
             if task.cmd in (constants.CMD_WRITE_TO_CLIENT,
                             constants.CMD_LOGIN_CLIENT,
                             constants.CMD_LOGOUT_CLIENT,
