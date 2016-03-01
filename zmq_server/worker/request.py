@@ -148,7 +148,7 @@ class Request(object):
 
         task = Task()
         task.cmd = constants.CMD_WRITE_TO_USERS
-        task.body = msg.SerializeToString()
+        task.data = msg.SerializeToString()
 
         return self.conn.write(task.SerializeToString())
 

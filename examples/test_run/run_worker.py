@@ -25,7 +25,20 @@ def close_client(request):
 @worker.route(2)
 def login(request):
     request.login_client(1, 2)
-    request.logout_client()
+    # request.logout_client()
+    request.write_to_client(dict(
+        ret=100,
+        body='ok'
+    ))
+
+
+@worker.route(3)
+def redirect(request):
+    request.write_to_users([
+        ((1, 2), dict(
+            ret=0,
+        )),
+    ])
     request.write_to_client(dict(
         ret=100,
         body='ok'

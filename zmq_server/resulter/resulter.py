@@ -113,7 +113,8 @@ class Resulter(object):
             if task.cmd in (constants.CMD_WRITE_TO_CLIENT,
                             constants.CMD_LOGIN_CLIENT,
                             constants.CMD_LOGOUT_CLIENT,
-                            constants.CMD_CLOSE_CLIENT):
+                            constants.CMD_CLOSE_CLIENT,
+                            constants.CMD_WRITE_TO_WORKER):
                 # 原样处理过去
                 # 给data的好处是，就不用再序列化了
                 self.to_send_queue.put((task.proc_id, data))
