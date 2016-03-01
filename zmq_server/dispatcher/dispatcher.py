@@ -23,8 +23,8 @@ class Dispatcher(object):
 
     proc_mgr = None
     outer_server = None
-    zmq_inner_server = None
-    zmq_forwarder_client = None
+    inner_server = None
+    forwarder_client = None
 
     # 准备发送到worker的queue
     task_queue = None
@@ -142,8 +142,8 @@ class Dispatcher(object):
         每个worker绑定的地址都要不一样
         """
         ctx = zmq.Context()
-        self.zmq_inner_server = ctx.socket(zmq.PUSH)
-        self.zmq_inner_server.bind(address)
+        self.inner_server = ctx.socket(zmq.PUSH)
+        self.inner_server.bind(address)
 
     def _fetch_forwarders(self):
         """
@@ -152,13 +152,13 @@ class Dispatcher(object):
         """
 
         ctx = zmq.Context()
-        self.zmq_forwarder_client = ctx.socket(zmq.SUB)
+        self.forwarder_client = ctx.socket(zmq.SUB)
         for address in self.forwarder_address_list:
-            self.zmq_forwarder_client.connect(address)
-        self.zmq_forwarder_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
+            self.forwarder_client.connect(address)
+        self.forwarder_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
 
         while True:
-            topic, msg = self.zmq_forwarder_client.recv_multipart()
+            topic, msg = self.forwarder_client.recv_multipart()
 
             task = gw_pb2.Task()
             task.ParseFromString(msg)
@@ -246,7 +246,7 @@ class Dispatcher(object):
 
         while True:
             task = self.task_queue.get()
-            self.zmq_inner_server.send(task.SerializeToString())
+            self.inner_server.send(task.SerializeToString())
 
     def _register_outer_server_handlers(self):
         """
