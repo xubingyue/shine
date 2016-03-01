@@ -21,7 +21,7 @@ class Connection(object):
         self.address_list = address_list
 
         ctx = zmq.Context()
-        self.zmq_client = ctx.socket(zmq.PUSH)
+        self.zmq_client = ctx.socket(zmq.PULL)
         for address in address_list:
             self.zmq_client.connect(address)
 
