@@ -14,8 +14,12 @@ import imp
 import os
 import errno
 
+PY2 = sys.version_info[0] == 2
 
-string_types = (str, )
+if not PY2:
+    string_types = (str, )
+else:
+    string_types = (str, unicode)
 
 
 def import_string(import_name, silent=False):
