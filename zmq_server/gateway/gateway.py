@@ -15,11 +15,14 @@ from .server import Server
 from ..share.proc_mgr import ProcMgr
 from ..share.log import logger
 from ..share import constants, gw_pb2
+from ..share.config import ConfigAttribute, Config
 
 
 class Gateway(object):
     name = constants.NAME
-    debug = False
+    debug = ConfigAttribute('DEBUG')
+
+    config = None
 
     proc_mgr = None
     outer_server = None
@@ -49,6 +52,7 @@ class Gateway(object):
     user_redis = None
 
     def __init__(self, box_class):
+        self.config = Config(defaults=constants.DEFAULT_CONFIG)
         self.proc_mgr = ProcMgr()
         self.outer_server = Server(box_class)
         self.task_queue = Queue()

@@ -12,6 +12,7 @@ import constants
 
 
 gateway = Gateway(Box)
+print gateway.debug
 
 if __name__ == '__main__':
     gateway.run(

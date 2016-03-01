@@ -32,3 +32,18 @@ CMD_LOGOUT_CLIENT           = 270 # 登出用户
 # worker的env
 WORKER_ENV_KEY = 'ZMQ_WORKER'
 
+
+# 默认config参数
+DEFAULT_CONFIG = {
+    'DEBUG': False,
+    'GATEWAY_OUTER_HOST': None,
+    'GATEWAY_OUTER_PORT': None,
+
+    'GATEWAY_INNER_ADDRESS_LIST': None,
+
+    'FORWARDER_INPUT_ADDRESS_LIST': None,
+    'FORWARDER_OUTPUT_ADDRESS_LIST': None,
+
+    'REDIS_URL': None,  # 用来存储用户ID->proc_id的映射
+    'REDIS_KEY_TPL': 'user:%s',  # 存储的键模板
+}
