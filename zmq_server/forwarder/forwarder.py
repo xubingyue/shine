@@ -191,7 +191,7 @@ class Forwarder(object):
                         if proc_id not in proc_id_to_rsp_dict:
                             new_rsp = gw_pb2.CloseUsers()
                             new_rsp.userdata = rsp.userdata
-                            proc_id_to_rsp_dict[proc_id] = new_row
+                            proc_id_to_rsp_dict[proc_id] = new_rsp
                         else:
                             new_rsp = proc_id_to_rsp_dict[proc_id]
 
