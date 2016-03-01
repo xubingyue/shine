@@ -45,10 +45,10 @@ class Worker(RoutesMixin, AppEventsMixin):
     worker_address_list = None
 
     # 将结果发送过去
-    result_address_list = None
+    forwarder_address_list = None
 
     # 连接到result server的连接
-    zmq_result_client = None
+    zmq_forwarder_client = None
 
     def __init__(self, box_class):
         RoutesMixin.__init__(self)
@@ -60,11 +60,11 @@ class Worker(RoutesMixin, AppEventsMixin):
     def register_blueprint(self, blueprint):
         blueprint.register_to_app(self)
 
-    def run(self, worker_address_list, result_address_list, debug=None, workers=None):
+    def run(self, worker_address_list, forwarder_address_list, debug=None, workers=None):
         """
 
         :param worker_address_list:  tcp://127.0.0.1:7100
-        :param result_address_list: tcp://127.0.0.1:7200
+        :param forwarder_address_list: tcp://127.0.0.1:7200
         :param debug:
         :param workers:
         :return:
@@ -72,7 +72,7 @@ class Worker(RoutesMixin, AppEventsMixin):
         self._validate_cmds()
 
         self.worker_address_list = worker_address_list
-        self.result_address_list = result_address_list
+        self.forwarder_address_list = forwarder_address_list
 
         if debug is not None:
             self.debug = debug
@@ -82,7 +82,7 @@ class Worker(RoutesMixin, AppEventsMixin):
         if os.getenv(constants.WORKER_ENV_KEY) != 'true':
             # 主进程
             logger.info('Connect to server on worker_address_list: %s, pub_address_list: %s, debug: %s, workers: %s',
-                        self.worker_address_list, self.result_address_list, self.debug, workers)
+                        self.worker_address_list, self.forwarder_address_list, self.debug, workers)
 
             # 设置进程名
             setproctitle.setproctitle(self._make_proc_name('master'))
@@ -126,7 +126,7 @@ class Worker(RoutesMixin, AppEventsMixin):
 
     def _on_worker_run(self):
         # 连接到结果server
-        self._connect_to_result_server()
+        self._connect_to_forwarder_server()
 
         self.events.create_worker()
         for bp in self.blueprints:
@@ -251,13 +251,13 @@ class Worker(RoutesMixin, AppEventsMixin):
         conn = self.connection_class(self, self.worker_address_list)
         conn.run()
 
-    def _connect_to_result_server(self):
+    def _connect_to_forwarder_server(self):
         """
         连接到结果服务器
         :return:
         """
 
         ctx = zmq.Context()
-        self.zmq_result_client = ctx.socket(zmq.PUSH)
-        for address in self.result_address_list:
-            self.zmq_result_client.connect(address)
+        self.zmq_forwarder_client = ctx.socket(zmq.PUSH)
+        for address in self.forwarder_address_list:
+            self.zmq_forwarder_client.connect(address)

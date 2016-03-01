@@ -24,7 +24,7 @@ class Gateway(object):
     proc_mgr = None
     outer_server = None
     zmq_inner_server = None
-    zmq_result_client = None
+    zmq_forwarder_client = None
 
     # 准备发送到worker的queue
     task_queue = None
@@ -32,7 +32,7 @@ class Gateway(object):
     outer_host = None
     outer_port = None
     inner_address_list = None
-    result_address_list = None
+    forwarder_address_list = None
 
     # worker唯一标示
     worker_uuid = None
@@ -53,7 +53,7 @@ class Gateway(object):
         self.outer_server = Server(box_class)
         self.task_queue = Queue()
 
-    def run(self, outer_host, outer_port, inner_address_list, result_address_list,
+    def run(self, outer_host, outer_port, inner_address_list, forwarder_address_list,
             user_redis_url=None, user_redis_key_tpl=None, user_redis_maxage=None,
             debug=None):
         """
@@ -61,7 +61,7 @@ class Gateway(object):
         :param outer_host: 外部地址 '0.0.0.0'
         :param outer_port: 外部地址 7100
         :param inner_address_list: 内部地址列表 [tcp://127.0.0.1:8833, ]，worker参数不需要了，就是内部地址列表的个数
-        :param result_address_list: 结果地址列表 [tcp://127.0.0.1:8855, ]
+        :param forwarder_address_list: 结果地址列表 [tcp://127.0.0.1:8855, ]
         :param user_redis_url: redis存储的url，不传的话，相当于不走分布式
         :param user_redis_key_tpl: redis存储的key模板，如 'zmq:user:%s'
         :param debug: 是否debug
@@ -71,7 +71,7 @@ class Gateway(object):
         self.outer_host = outer_host
         self.outer_port = outer_port
         self.inner_address_list = inner_address_list
-        self.result_address_list = result_address_list
+        self.forwarder_address_list = forwarder_address_list
         self.user_redis_url = user_redis_url
         self.user_redis_key_tpl = user_redis_key_tpl
         self.user_redis_maxage = user_redis_maxage
@@ -90,7 +90,7 @@ class Gateway(object):
             logger.info('Running outer_host: %s, outer_port: %s, pull_address_list: %s, pub_address_list: %s, debug: %s, workers: %s',
                         outer_host, outer_port,
                         inner_address_list,
-                        result_address_list,
+                        forwarder_address_list,
                         self.debug, workers)
 
             self._prepare_server()
@@ -129,7 +129,7 @@ class Gateway(object):
         :return:
         """
         job_list = []
-        for action in [self.outer_server._serve_forever, self._fetch_results, self._send_task_to_worker]:
+        for action in [self.outer_server._serve_forever, self._fetch_forwarders, self._send_task_to_worker]:
             job = gevent.spawn(action)
             job_list.append(job)
 
@@ -145,20 +145,20 @@ class Gateway(object):
         self.zmq_inner_server = ctx.socket(zmq.PUSH)
         self.zmq_inner_server.bind(address)
 
-    def _fetch_results(self):
+    def _fetch_forwarders(self):
         """
-        从result server那拿数据
+        从forwarder server那拿数据
         :return:
         """
 
         ctx = zmq.Context()
-        self.zmq_result_client = ctx.socket(zmq.SUB)
-        for address in self.result_address_list:
-            self.zmq_result_client.connect(address)
-        self.zmq_result_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
+        self.zmq_forwarder_client = ctx.socket(zmq.SUB)
+        for address in self.forwarder_address_list:
+            self.zmq_forwarder_client.connect(address)
+        self.zmq_forwarder_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
 
         while True:
-            topic, msg = self.zmq_result_client.recv_multipart()
+            topic, msg = self.zmq_forwarder_client.recv_multipart()
 
             task = gw_pb2.Task()
             task.ParseFromString(msg)

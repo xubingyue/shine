@@ -18,7 +18,7 @@ if __name__ == '__main__':
         constants.GATEWAY_OUTER_HOST,
         constants.GATEWAY_OUTER_PORT,
         constants.GATEWAY_WORKER_ADDRESS_LIST,
-        constants.RESULTER_PUB_ADDRESS_LIST,
+        constants.FORWARDER_PUB_ADDRESS_LIST,
         'redis://127.0.0.1:6379/0',
         'zmq:user:%s',
     )

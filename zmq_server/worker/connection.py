@@ -75,7 +75,7 @@ class Connection(object):
         for bp in self.app.blueprints:
             bp.events.before_app_response(self, data)
 
-        self.app.zmq_result_client.send(data)
+        self.app.zmq_forwarder_client.send(data)
 
         for bp in self.app.blueprints:
             bp.events.after_app_response(self, data)
