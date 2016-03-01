@@ -174,8 +174,9 @@ class Gateway(object):
             self.conn_dict[conn.id] = conn
 
             task = gw_pb2.Task()
-            task.client_id = conn.id
             task.proc_id = self.worker_uuid
+            task.client_id = conn.id
+            task.client_ip = conn.address[0]
             task.cmd = constants.CMD_CLIENT_CREATED
 
             self.task_queue.put(task)
@@ -187,8 +188,9 @@ class Gateway(object):
             self.conn_dict.pop(conn.id, None)
 
             task = gw_pb2.Task()
-            task.client_id = conn.id
             task.proc_id = self.worker_uuid
+            task.client_id = conn.id
+            task.client_ip = conn.address[0]
             task.cmd = constants.CMD_CLIENT_CLOSED
 
             self.task_queue.put(task)
@@ -198,8 +200,9 @@ class Gateway(object):
             # 转发到worker
             logger.debug('conn.id: %r, data: %r', conn.id, data)
             task = gw_pb2.Task()
-            task.client_id = conn.id
             task.proc_id = self.worker_uuid
+            task.client_id = conn.id
+            task.client_ip = conn.address[0]
             task.cmd = constants.CMD_CLIENT_REQ
             task.data = data
             self.task_queue.put(task)

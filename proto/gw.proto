@@ -5,8 +5,8 @@ option java_outer_classname="GWProto";
 
 // 封装的Task
 message Task {
-    optional bytes client_id = 1;                   // 连接ID
-    optional bytes proc_id = 2;                     // 进程ID
+    optional bytes proc_id = 1;                     // 进程ID
+    optional bytes client_id = 2;                   // 连接ID
     optional string client_ip = 3;                  // 客户端IP
     optional int32 cmd = 4;                         // 命令字
     optional bytes data = 5;                        // 数据
