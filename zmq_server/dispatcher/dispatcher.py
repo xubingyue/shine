@@ -87,7 +87,7 @@ class Dispatcher(object):
         workers = len(self.inner_address_list)
 
         def run_wrapper():
-            logger.info('Running outer_host: %s, outer_port: %s, pull_address_list: %s, pub_address_list: %s, debug: %s, workers: %s',
+            logger.info('Running outer_host: %s, outer_port: %s, input_address_list: %s, output_address_list: %s, debug: %s, workers: %s',
                         outer_host, outer_port,
                         inner_address_list,
                         forwarder_address_list,

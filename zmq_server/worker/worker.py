@@ -81,7 +81,7 @@ class Worker(RoutesMixin, AppEventsMixin):
 
         if os.getenv(constants.WORKER_ENV_KEY) != 'true':
             # 主进程
-            logger.info('Connect to server on worker_address_list: %s, pub_address_list: %s, debug: %s, workers: %s',
+            logger.info('Connect to server on worker_address_list: %s, output_address_list: %s, debug: %s, workers: %s',
                         self.worker_address_list, self.forwarder_address_list, self.debug, workers)
 
             # 设置进程名

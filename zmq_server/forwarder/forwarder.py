@@ -18,11 +18,11 @@ class Forwarder(object):
     debug = False
 
     proc_mgr = None
-    zmq_pull_server = None
-    zmq_pub_server = None
+    zmq_input_server = None
+    zmq_output_server = None
 
-    pull_address_list = None
-    pub_address_list = None
+    input_address_list = None
+    output_address_list = None
 
     # 等待处理的队列[data, ]
     to_deal_queue = None
@@ -40,21 +40,21 @@ class Forwarder(object):
         self.to_deal_queue = Queue()
         self.to_send_queue = Queue()
 
-    def run(self, pull_address_list, pub_address_list,
+    def run(self, input_address_list, output_address_list,
             user_redis_url=None, user_redis_key_tpl=None,
             debug=None):
         """
         启动
-        :param pull_address_list: 内部地址列表 [tcp://127.0.0.1:8833, ]，worker参数不需要了，就是内部地址列表的个数
-        :param pub_address_list: 结果地址列表 [tcp://127.0.0.1:8855, ]
+        :param input_address_list: 内部地址列表 [tcp://127.0.0.1:8833, ]，worker参数不需要了，就是内部地址列表的个数
+        :param output_address_list: 结果地址列表 [tcp://127.0.0.1:8855, ]
         :param debug: 是否debug
         :return:
         """
 
-        assert len(pull_address_list) == len(pub_address_list)
+        assert len(input_address_list) == len(output_address_list)
 
-        self.pull_address_list = pull_address_list
-        self.pub_address_list = pub_address_list
+        self.input_address_list = input_address_list
+        self.output_address_list = output_address_list
         self.user_redis_url = user_redis_url
         self.user_redis_key_tpl = user_redis_key_tpl
 
@@ -65,12 +65,12 @@ class Forwarder(object):
         if debug is not None:
             self.debug = debug
 
-        workers = len(self.pull_address_list)
+        workers = len(self.input_address_list)
 
         def run_wrapper():
-            logger.info('Running pull_address_list: %s, pub_address_list: %s, debug: %s, workers: %s',
-                        pull_address_list,
-                        pub_address_list,
+            logger.info('Running input_address_list: %s, output_address_list: %s, debug: %s, workers: %s',
+                        input_address_list,
+                        output_address_list,
                         self.debug, workers)
 
             setproctitle.setproctitle(self._make_proc_name('forwarder:master'))
@@ -95,7 +95,7 @@ class Forwarder(object):
 
         return proc_name
 
-    def _deal_forever(self):
+    def _handle_task_forever(self):
         """
         一直在处理
         :return:
@@ -205,18 +205,18 @@ class Forwarder(object):
 
                         self.to_send_queue.put((proc_id, rsp_task))
 
-    def _pull_forever(self):
+    def _handle_input_forever(self):
         """
         一直在收消息
         :return:
         """
 
         while 1:
-            data = self.zmq_pull_server.recv()
+            data = self.zmq_input_server.recv()
 
             self.to_deal_queue.put(data)
 
-    def _pub_forever(self):
+    def _handle_output_forever(self):
         """
         :return:
         """
@@ -225,7 +225,7 @@ class Forwarder(object):
             if isinstance(data, gw_pb2.Task):
                 data = data.SerializeToString()
 
-            self.zmq_pub_server.send_multipart(
+            self.zmq_output_server.send_multipart(
                 (topic, data)
             )
 
@@ -235,7 +235,7 @@ class Forwarder(object):
         :return:
         """
         job_list = []
-        for action in [self._pull_forever, self._deal_forever, self._pub_forever]:
+        for action in [self._handle_input_forever, self._handle_task_forever, self._handle_output_forever]:
             job = gevent.spawn(action)
             job_list.append(job)
 
@@ -248,8 +248,8 @@ class Forwarder(object):
         每个worker绑定的地址都要不一样
         """
         ctx = zmq.Context()
-        self.zmq_pull_server = ctx.socket(zmq.PULL)
-        self.zmq_pull_server.bind(address)
+        self.zmq_input_server = ctx.socket(zmq.PULL)
+        self.zmq_input_server.bind(address)
 
     def _start_pub_server(self, address):
         """
@@ -257,8 +257,8 @@ class Forwarder(object):
         每个worker绑定的地址都要不一样
         """
         ctx = zmq.Context()
-        self.zmq_pub_server = ctx.socket(zmq.PUB)
-        self.zmq_pub_server.bind(address)
+        self.zmq_output_server = ctx.socket(zmq.PUB)
+        self.zmq_output_server.bind(address)
 
     def _worker_run(self, index):
         """
@@ -268,8 +268,8 @@ class Forwarder(object):
         setproctitle.setproctitle(self._make_proc_name('forwarder:worker:%s' % index))
         self._handle_child_proc_signals()
 
-        self._start_pull_server(self.pull_address_list[index])
-        self._start_pub_server(self.pub_address_list[index])
+        self._start_pull_server(self.input_address_list[index])
+        self._start_pub_server(self.output_address_list[index])
 
         try:
             self._serve_forever()
