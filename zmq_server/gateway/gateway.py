@@ -119,7 +119,7 @@ class Gateway(object):
         for job in job_list:
             job.join()
 
-    def _start_innder_server(self, address):
+    def _start_inner_server(self, address):
         """
         zmq的内部server
         每个worker绑定的地址都要不一样
@@ -213,7 +213,7 @@ class Gateway(object):
         self.worker_uuid = uuid.uuid4().bytes
         self._handle_child_proc_signals()
         self._register_outer_server_handlers()
-        self._start_innder_server(self.inner_address_list[index])
+        self._start_inner_server(self.inner_address_list[index])
 
         try:
             self._serve_forever()
