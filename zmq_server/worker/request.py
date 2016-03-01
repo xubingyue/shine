@@ -10,9 +10,9 @@ class Request(object):
     请求
     """
 
-    # 与gateway的连接对象
+    # 与dispatcher的连接对象
     conn = None
-    # gateway封装的task
+    # dispatcher封装的task
     task = None
     # 业务box
     box = None
