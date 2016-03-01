@@ -11,7 +11,7 @@ import gevent
 from gevent.queue import Queue
 import zmq.green as zmq  # for gevent
 
-from zmq_server.gateway.server import Server
+from .server import Server
 from ..share.proc_mgr import ProcMgr
 from ..share.log import logger
 from ..share import constants, gw_pb2
