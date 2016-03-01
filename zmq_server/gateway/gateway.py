@@ -141,15 +141,14 @@ class Gateway(object):
         self.zmq_result_client.setsockopt(zmq.SUBSCRIBE, self.worker_uuid)
 
         while True:
-            msg_part_list = self.zmq_result_client.recv_multipart()
+            topic, msg = self.zmq_result_client.recv_multipart()
 
-            for msg_part in msg_part_list:
-                task = gw_pb2.Task()
-                task = task.ParseFromString(msg_part[1])
+            task = gw_pb2.Task()
+            task = task.ParseFromString(msg)
 
-                conn = self.conn_dict.get(task.client_id)
-                if conn:
-                    conn.write(task.data)
+            conn = self.conn_dict.get(task.client_id)
+            if conn:
+                conn.write(task.data)
 
     def _send_task_to_worker(self):
         """
