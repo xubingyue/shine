@@ -7,6 +7,7 @@ import setproctitle
 import gevent
 from gevent.queue import Queue
 import zmq.green as zmq  # for gevent
+from collections import defaultdict
 from ..share.proc_mgr import ProcMgr
 from ..share.log import logger
 from ..share import constants, gw_pb2
@@ -28,12 +29,20 @@ class Resulter(object):
     # 等待发送的队列[(topic, data or task), ]
     to_send_queue = None
 
+    user_redis_url = None
+    user_redis_key_tpl = None
+
+    # 存储存储userid->proc_id
+    user_redis = None
+
     def __init__(self):
         self.proc_mgr = ProcMgr()
         self.to_deal_queue = Queue()
         self.to_send_queue = Queue()
 
-    def run(self, pull_address_list, pub_address_list, debug=None):
+    def run(self, pull_address_list, pub_address_list,
+            user_redis_url=None, user_redis_key_tpl=None,
+            debug=None):
         """
         启动
         :param pull_address_list: 内部地址列表 [tcp://127.0.0.1:8833, ]，worker参数不需要了，就是内部地址列表的个数
@@ -46,6 +55,12 @@ class Resulter(object):
 
         self.pull_address_list = pull_address_list
         self.pub_address_list = pub_address_list
+        self.user_redis_url = user_redis_url
+        self.user_redis_key_tpl = user_redis_key_tpl
+
+        if self.user_redis_url:
+            import redis
+            self.user_redis = redis.from_url(self.user_redis_url)
 
         if debug is not None:
             self.debug = debug
@@ -102,6 +117,90 @@ class Resulter(object):
                 # 原样处理过去
                 # 给data的好处是，就不用再序列化了
                 self.to_send_queue.put((task.proc_id, data))
+            elif task.cmd == constants.CMD_WRITE_TO_USERS:
+                if not self.user_redis:
+                    # 直接转发就好
+                    self.to_send_queue.put((task.proc_id, data))
+                else:
+                    uid_list = set()
+                    rsp = gw_pb2.RspToUsers()
+                    rsp.ParseFromString(task.data)
+                    for row in rsp.rows:
+                        uid_list.update(set(row.uids))
+
+                    uid_list = list(uid_list)  # 一定要变回来
+                    proc_id_list = self.user_redis.mget(uid_list)
+                    proc_id_to_uid_dict = dict(zip(uid_list, proc_id_list))
+
+                    proc_id_to_rsp_dict = defaultdict(gw_pb2.RspToUsers)
+
+                    for row in rsp.rows:
+                        proc_id_to_row_dict = dict()
+
+                        for uid in row.uids:
+                            proc_id = proc_id_to_uid_dict.get(uid)
+                            if proc_id is None:
+                                continue
+
+                            if proc_id not in proc_id_to_row_dict:
+                                new_row = gw_pb2.RspToUsers.Row()
+                                proc_id_to_row_dict[proc_id] = new_row
+                            else:
+                                new_row = proc_id_to_row_dict[proc_id]
+
+                            new_row.uids.append(uid)
+                            new_row.userdata = row.userdata
+                            new_row.buf = row.buf
+
+                        for proc_id, new_row in proc_id_to_row_dict.items():
+                            # 得用extend才行
+                            proc_id_to_rsp_dict[proc_id].rows.extend([new_row])
+
+                    # 消息已经搞定了，现在就是发送了
+                    for proc_id, rsp in proc_id_to_rsp_dict.items():
+                        rsp_task = gw_pb2.Task()
+                        rsp_task.cmd = task.cmd
+                        rsp_task.proc_id = proc_id
+                        rsp_task.data = rsp.SerializeToString()
+
+                        self.to_send_queue.put((proc_id, rsp_task))
+            elif task.cmd == constants.CMD_CLOSE_USERS:
+                if not self.user_redis:
+                    # 直接转发就好
+                    self.to_send_queue.put((task.proc_id, data))
+                else:
+                    rsp = gw_pb2.CloseUsers()
+                    rsp.ParseFromString(task.data)
+
+                    uid_list = list(rsp.uids)
+
+                    proc_id_list = self.user_redis.mget(uid_list)
+                    proc_id_to_uid_dict = dict(zip(uid_list, proc_id_list))
+
+                    proc_id_to_rsp_dict = defaultdict(gw_pb2.CloseUsers)
+
+                    for uid in uid_list:
+                        proc_id = proc_id_to_uid_dict.get(uid)
+                        if proc_id is None:
+                            continue
+
+                        if proc_id not in proc_id_to_rsp_dict:
+                            new_rsp = gw_pb2.CloseUsers()
+                            proc_id_to_rsp_dict[proc_id] = new_row
+                        else:
+                            new_rsp = proc_id_to_rsp_dict[proc_id]
+
+                        new_rsp.uids.append(uid)
+                        new_rsp.userdata = rsp.userdata
+
+                    # 消息已经搞定了，现在就是发送了
+                    for proc_id, rsp in proc_id_to_rsp_dict.items():
+                        rsp_task = gw_pb2.Task()
+                        rsp_task.cmd = task.cmd
+                        rsp_task.proc_id = proc_id
+                        rsp_task.data = rsp.SerializeToString()
+
+                        self.to_send_queue.put((proc_id, rsp_task))
 
     def _pull_forever(self):
         """
