@@ -44,6 +44,7 @@ DEFAULT_CONFIG = {
     'FORWARDER_INPUT_ADDRESS_LIST': None,
     'FORWARDER_OUTPUT_ADDRESS_LIST': None,
 
-    'REDIS_URL': None,  # 用来存储用户ID->proc_id的映射
-    'REDIS_KEY_TPL': 'user:%s',  # 存储的键模板
+    'USER_REDIS_URL': None,  # 用来存储用户ID->proc_id的映射
+    'USER_REDIS_KEY_TPL': 'user:%s',  # 存储的键模板
+    'USER_REDIS_MAXAGE': None,  # 多长时间过期
 }
