@@ -148,9 +148,59 @@ class Gateway(object):
 
             logger.debug('task:\n%s', task)
 
+            self._deal_task(task)
+
+    def _deal_task(self, task):
+        """
+        处理task
+        :param task:
+        :return:
+        """
+
+        if task.cmd == constants.CMD_WRITE_TO_CLIENT:
             conn = self.conn_dict.get(task.client_id)
             if conn:
                 conn.write(task.data)
+        elif task.cmd == constants.CMD_CLOSE_CLIENT:
+            conn = self.conn_dict.get(task.client_id)
+            if conn:
+                conn.close()
+        elif task.cmd == constants.CMD_LOGIN_CLIENT:
+            conn = self.conn_dict.get(task.client_id)
+            if conn:
+                if conn.uid is not None:
+                    # 旧的登录用户
+                    self.user_dict.pop(conn.uid, None)
+                    conn.uid = conn.userdata = None
+
+                conn.uid = task.uid
+                conn.userdata = task.userdata
+                self.user_dict[conn.uid] = conn
+        elif task.cmd == constants.CMD_LOGOUT_CLIENT:
+            conn = self.conn_dict.get(task.client_id)
+            if conn:
+                if conn.uid is not None:
+                    self.user_dict.pop(conn.uid, None)
+                    conn.uid = conn.userdata = None
+        elif task.cmd == constants.CMD_WRITE_TO_USERS:
+            rsp = gw_pb2.RspToUsers()
+            rsp.ParseFromString(task.data)
+
+            for row in rsp.rows:
+                for uid in row.uids:
+                    conn = self.user_dict.get(uid)
+                    if conn and (conn.userdata & row.userdata) == row.userdata:
+                        conn.write(row.buf)
+
+        elif task.cmd == constants.CMD_CLOSE_USERS:
+            rsp = gw_pb2.CloseUsers()
+            rsp.ParseFromString(task.data)
+
+            for uid in rsp.uids:
+
+                conn = self.user_dict.get(uid)
+                if conn and (conn.userdata & rsp.userdata) == rsp.userdata:
+                    conn.close()
 
     def _send_task_to_worker(self):
         """

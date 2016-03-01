@@ -15,6 +15,9 @@ class Connection(object):
     # 登录之后的用户ID
     uid = None
 
+    # 用户userdata
+    userdata = None
+
     def __init__(self, app, stream, address):
         self.id = uuid.uuid4().bytes
         self.app = app
