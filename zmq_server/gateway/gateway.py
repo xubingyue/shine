@@ -144,7 +144,9 @@ class Gateway(object):
             topic, msg = self.zmq_result_client.recv_multipart()
 
             task = gw_pb2.Task()
-            task = task.ParseFromString(msg)
+            task.ParseFromString(msg)
+
+            logger.debug('task:\n%s', task)
 
             conn = self.conn_dict.get(task.client_id)
             if conn:

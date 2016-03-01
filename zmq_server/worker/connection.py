@@ -85,12 +85,9 @@ class Connection(object):
 
     def _read_message(self):
 
-        msg = self.zmq_client.recv()
+        data = self.zmq_client.recv()
 
-        task = gw_pb2.Task()
-        task.ParseFromString(msg)
-
-        self._on_read_complete(task)
+        self._on_read_complete(data)
 
         if self.closed():
             self._on_connection_close()
@@ -108,7 +105,12 @@ class Connection(object):
         """
         数据获取结束
         """
-        request = self.app.request_class(self, data)
+        task = gw_pb2.Task()
+        task.ParseFromString(data)
+
+        logger.debug('task:\n%s', task)
+
+        request = self.app.request_class(self, task)
 
         # 设置job开始处理的时间和信息
         self.job_info = dict(

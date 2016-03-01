@@ -104,14 +104,14 @@ class Request(object):
         elif isinstance(data, dict):
             data = self.box.map(data).pack()
 
-        rsp = Task()
+        task = Task()
         # 就可以直接通过proc_id和client_id来进行识别了
-        rsp.client_id = rsp.client_id
-        rsp.proc_id = rsp.proc_id
-        rsp.cmd = constants.CMD_WRITE_TO_CLIENT
-        rsp.data = data
+        task.client_id = self.task.client_id
+        task.proc_id = self.task.proc_id
+        task.cmd = constants.CMD_WRITE_TO_CLIENT
+        task.data = data
 
-        succ = self.conn.write(rsp.SerializeToString())
+        succ = self.conn.write(task.SerializeToString())
 
         if succ:
             # 如果发送成功，就标记为已经回应
@@ -146,14 +146,16 @@ class Request(object):
             row.userdata = userdata or 0
             row.uids.extend(uids)
 
-        rsp = Task()
-        rsp.cmd = constants.CMD_WRITE_TO_USERS
-        rsp.body = msg.SerializeToString()
+        task = Task()
+        task.cmd = constants.CMD_WRITE_TO_USERS
+        task.body = msg.SerializeToString()
 
-        return self.conn.write(rsp.SerializeToString())
+        return self.conn.write(task.SerializeToString())
 
     def close_client(self):
         task = Task()
+        task.client_id = self.task.client_id
+        task.proc_id = self.task.proc_id
         task.cmd = constants.CMD_CLOSE_CLIENT
 
         return self.conn.write(task.SerializeToString())
@@ -172,6 +174,8 @@ class Request(object):
     def login_client(self, uid, userdata=None):
 
         task = Task()
+        task.client_id = self.task.client_id
+        task.proc_id = self.task.proc_id
         task.cmd = constants.CMD_LOGIN_CLIENT
         task.uid = uid
         task.userdata = userdata or 0
@@ -180,6 +184,8 @@ class Request(object):
 
     def logout_client(self):
         task = Task()
+        task.client_id = self.task.client_id
+        task.proc_id = self.task.proc_id
         task.cmd = constants.CMD_LOGOUT_CLIENT
 
         return self.conn.write(task.SerializeToString())
@@ -190,6 +196,8 @@ class Request(object):
         """
 
         task = Task()
+        task.client_id = self.task.client_id
+        task.proc_id = self.task.proc_id
         task.cmd = constants.CMD_WRITE_TO_WORKER
 
         if isinstance(data, self.app.box_class):

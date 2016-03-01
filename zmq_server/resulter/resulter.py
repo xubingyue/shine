@@ -83,7 +83,7 @@ class Resulter(object):
             task = gw_pb2.Task()
             task.ParseFromString(data)
 
-            logger.debug('task: %s', task)
+            logger.debug('task:\n%s', task)
 
             # TODO 先只处理write_to_client的方式
             if task.cmd == constants.CMD_WRITE_TO_CLIENT:
