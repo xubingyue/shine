@@ -16,7 +16,7 @@ class Resulter(object):
 
     proc_mgr = None
     zmq_pull_server = None
-    zmq_pub_client = None
+    zmq_pub_server = None
 
     pull_address_list = None
     pub_address_list = None
@@ -86,7 +86,7 @@ class Resulter(object):
             # TODO 先只处理write_to_client的方式
             if task.cmd == constants.CMD_WRITE_TO_CLIENT:
                 # 原样处理过去
-                self.zmq_pub_client.send(
+                self.zmq_pub_server.send(
                     (task.proc_id, data)
                 )
 
@@ -105,8 +105,8 @@ class Resulter(object):
         每个worker绑定的地址都要不一样
         """
         ctx = zmq.Context()
-        self.zmq_pull_server = ctx.socket(zmq.PUB)
-        self.zmq_pull_server.bind(address)
+        self.zmq_pub_server = ctx.socket(zmq.PUB)
+        self.zmq_pub_server.bind(address)
 
     def _worker_run(self, index):
         """
