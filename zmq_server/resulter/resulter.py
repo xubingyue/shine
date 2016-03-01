@@ -130,7 +130,8 @@ class Resulter(object):
                         uid_list.update(set(row.uids))
 
                     uid_list = list(uid_list)  # 一定要变回来
-                    proc_id_list = self.user_redis.mget(uid_list)
+                    key_list = [self.user_redis_key_tpl % uid for uid in uid_list]
+                    proc_id_list = self.user_redis.mget(key_list)
                     proc_id_to_uid_dict = dict(zip(uid_list, proc_id_list))
 
                     proc_id_to_rsp_dict = defaultdict(gw_pb2.RspToUsers)
@@ -145,13 +146,13 @@ class Resulter(object):
 
                             if proc_id not in proc_id_to_row_dict:
                                 new_row = gw_pb2.RspToUsers.Row()
+                                new_row.userdata = row.userdata
+                                new_row.buf = row.buf
                                 proc_id_to_row_dict[proc_id] = new_row
                             else:
                                 new_row = proc_id_to_row_dict[proc_id]
 
                             new_row.uids.append(uid)
-                            new_row.userdata = row.userdata
-                            new_row.buf = row.buf
 
                         for proc_id, new_row in proc_id_to_row_dict.items():
                             # 得用extend才行
@@ -175,7 +176,9 @@ class Resulter(object):
 
                     uid_list = list(rsp.uids)
 
-                    proc_id_list = self.user_redis.mget(uid_list)
+                    key_list = [self.user_redis_key_tpl % uid for uid in uid_list]
+
+                    proc_id_list = self.user_redis.mget(key_list)
                     proc_id_to_uid_dict = dict(zip(uid_list, proc_id_list))
 
                     proc_id_to_rsp_dict = defaultdict(gw_pb2.CloseUsers)
@@ -187,12 +190,12 @@ class Resulter(object):
 
                         if proc_id not in proc_id_to_rsp_dict:
                             new_rsp = gw_pb2.CloseUsers()
+                            new_rsp.userdata = rsp.userdata
                             proc_id_to_rsp_dict[proc_id] = new_row
                         else:
                             new_rsp = proc_id_to_rsp_dict[proc_id]
 
                         new_rsp.uids.append(uid)
-                        new_rsp.userdata = rsp.userdata
 
                     # 消息已经搞定了，现在就是发送了
                     for proc_id, rsp in proc_id_to_rsp_dict.items():

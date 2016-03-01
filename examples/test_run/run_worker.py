@@ -33,10 +33,11 @@ def login(request):
 
 
 @worker.route(3)
-def redirect(request):
+def write_to_users(request):
     request.write_to_users([
         ((1, 2), dict(
             ret=0,
+            body='from worker'
         )),
     ])
     request.write_to_client(dict(
@@ -44,6 +45,14 @@ def redirect(request):
         body='ok'
     ))
 
+
+@worker.route(4)
+def close_users(request):
+    request.close_users([1, 2])
+    request.write_to_client(dict(
+        ret=100,
+        body='ok'
+    ))
 
 if __name__ == '__main__':
     worker.run(
