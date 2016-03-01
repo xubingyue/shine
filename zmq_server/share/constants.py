@@ -35,16 +35,26 @@ WORKER_ENV_KEY = 'ZMQ_WORKER'
 
 # 默认config参数
 DEFAULT_CONFIG = {
+    # gateway, worker, forwarder 需要
     'DEBUG': False,
+
+    # gateway 需要
     'GATEWAY_OUTER_HOST': None,
+    # gateway 需要
     'GATEWAY_OUTER_PORT': None,
 
+    # gateway, worker 需要
     'GATEWAY_INNER_ADDRESS_LIST': None,
 
+    # worker, forwarder 需要
     'FORWARDER_INPUT_ADDRESS_LIST': None,
+    # gateway, forwarder 需要
     'FORWARDER_OUTPUT_ADDRESS_LIST': None,
 
+    # gateway, forwarder 需要
     'USER_REDIS_URL': None,  # 用来存储用户ID->proc_id的映射
+    # gateway, forwarder 需要
     'USER_REDIS_KEY_TPL': 'user:%s',  # 存储的键模板
+    # gateway 需要
     'USER_REDIS_MAXAGE': None,  # 最长存储的秒数，因为有可能有些用户的数据没有正常清空
 }
