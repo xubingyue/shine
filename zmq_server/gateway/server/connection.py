@@ -20,7 +20,6 @@ class Connection(object):
         self.app = app
         self.stream = stream
         self.address = address
-
         self.app.events.create_conn(self)
 
     def write(self, data):
