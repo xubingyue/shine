@@ -7,10 +7,11 @@ option java_outer_classname="GWProto";
 message Task {
     optional bytes client_id = 1;                   // 连接ID
     optional bytes proc_id = 2;                     // 进程ID
-    optional int32 cmd = 3;                         // 命令字
-    optional bytes data = 4;                        // 数据
-    optional int64 uid = 5[default=0];              // 用户ID
-    optional int64 userdata = 6[default=0];         // 用户数据
+    optional string client_ip = 3;                  // 客户端IP
+    optional int32 cmd = 4;                         // 命令字
+    optional bytes data = 5;                        // 数据
+    optional int64 uid = 6[default=0];              // 用户ID
+    optional int64 userdata = 7[default=0];         // 用户数据
 }
 
 message RspToUsers {
