@@ -4,7 +4,9 @@
 import signal
 import sys
 import setproctitle
-import zmq
+import gevent
+from gevent.queue import Queue
+import zmq.green as zmq  # for gevent
 from ..share.proc_mgr import ProcMgr
 from ..share.log import logger
 from ..share import constants, gw_pb2
@@ -21,8 +23,15 @@ class Resulter(object):
     pull_address_list = None
     pub_address_list = None
 
+    # 等待处理的队列
+    to_deal_queue = None
+    # 等待发送的队列
+    to_send_queue = None
+
     def __init__(self):
         self.proc_mgr = ProcMgr()
+        self.to_deal_queue = Queue()
+        self.to_send_queue = Queue()
 
     def run(self, pull_address_list, pub_address_list, debug=None):
         """
@@ -71,9 +80,23 @@ class Resulter(object):
 
         return proc_name
 
-    def _serve_forever(self):
+    def _deal_forever(self):
         """
-        保持运行
+        一直在处理
+        :return:
+        """
+
+        while 1:
+            task = self.to_deal_queue.get()
+
+            # TODO 先只处理write_to_client的方式
+            if task.cmd == constants.CMD_WRITE_TO_CLIENT:
+                # 原样处理过去
+                self.to_send_queue.put(task)
+
+    def _pull_forever(self):
+        """
+        一直在收消息
         :return:
         """
 
@@ -85,12 +108,31 @@ class Resulter(object):
 
             logger.debug('task:\n%s', task)
 
-            # TODO 先只处理write_to_client的方式
-            if task.cmd == constants.CMD_WRITE_TO_CLIENT:
-                # 原样处理过去
-                self.zmq_pub_server.send_multipart(
-                    (task.proc_id, data)
-                )
+            self.to_deal_queue.put(task)
+
+    def _pub_forever(self):
+        """
+        :return:
+        """
+        while 1:
+            task = self.to_send_queue.get()
+
+            self.zmq_pub_server.send_multipart(
+                (task.proc_id, task.SerializeToString())
+            )
+
+    def _serve_forever(self):
+        """
+        保持运行
+        :return:
+        """
+        job_list = []
+        for action in [self._pull_forever, self._deal_forever, self._pub_forever]:
+            job = gevent.spawn(action)
+            job_list.append(job)
+
+        for job in job_list:
+            job.join()
 
     def _start_pull_server(self, address):
         """
