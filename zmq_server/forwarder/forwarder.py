@@ -18,8 +18,8 @@ class Forwarder(object):
     debug = False
 
     proc_mgr = None
-    zmq_input_server = None
-    zmq_output_server = None
+    input_server = None
+    output_server = None
 
     input_address_list = None
     output_address_list = None
@@ -212,7 +212,7 @@ class Forwarder(object):
         """
 
         while 1:
-            data = self.zmq_input_server.recv()
+            data = self.input_server.recv()
 
             self.to_deal_queue.put(data)
 
@@ -225,7 +225,7 @@ class Forwarder(object):
             if isinstance(data, gw_pb2.Task):
                 data = data.SerializeToString()
 
-            self.zmq_output_server.send_multipart(
+            self.output_server.send_multipart(
                 (topic, data)
             )
 
@@ -248,8 +248,8 @@ class Forwarder(object):
         每个worker绑定的地址都要不一样
         """
         ctx = zmq.Context()
-        self.zmq_input_server = ctx.socket(zmq.PULL)
-        self.zmq_input_server.bind(address)
+        self.input_server = ctx.socket(zmq.PULL)
+        self.input_server.bind(address)
 
     def _start_pub_server(self, address):
         """
@@ -257,8 +257,8 @@ class Forwarder(object):
         每个worker绑定的地址都要不一样
         """
         ctx = zmq.Context()
-        self.zmq_output_server = ctx.socket(zmq.PUB)
-        self.zmq_output_server.bind(address)
+        self.output_server = ctx.socket(zmq.PUB)
+        self.output_server.bind(address)
 
     def _worker_run(self, index):
         """
