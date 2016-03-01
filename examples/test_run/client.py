@@ -10,7 +10,7 @@ import time
 import constants
 
 def handle(uid):
-    client = TcpClient(Box, constants.GATEWAY_OUTER_HOST, constants.GATEWAY_OUTER_PORT, timeout=None)
+    client = TcpClient(Box, constants.DISPATCHER_OUTER_HOST, constants.DISPATCHER_OUTER_PORT, timeout=None)
     client.connect()
 
     box = Box()

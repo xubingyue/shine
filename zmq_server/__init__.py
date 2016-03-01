@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from gateway.gateway import Gateway
+from dispatcher.dispatcher import Dispatcher
 from forwarder.forwarder import Forwarder
 from worker.worker import Worker
 from share.log import logger
