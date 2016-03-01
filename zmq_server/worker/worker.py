@@ -88,11 +88,11 @@ class Worker(RoutesMixin, AppEventsMixin):
             setproctitle.setproctitle(self._make_proc_name('master'))
             # 只能在主线程里面设置signals
             self._handle_parent_proc_signals()
-            self._fork_workers(workers)
+            self._spawn_workers(workers)
         else:
             # 子进程
             setproctitle.setproctitle(self._make_proc_name('worker'))
-            self._try_serve_forever()
+            self._worker_run()
 
     def _make_proc_name(self, subtitle):
         """
@@ -124,7 +124,7 @@ class Worker(RoutesMixin, AppEventsMixin):
 
         assert not duplicate_cmds, 'duplicate cmds: %s' % duplicate_cmds
 
-    def _before_worker_run(self):
+    def _on_worker_run(self):
         # 连接到结果server
         self._connect_to_result_server()
 
@@ -132,10 +132,10 @@ class Worker(RoutesMixin, AppEventsMixin):
         for bp in self.blueprints:
             bp.events.create_app_worker()
 
-    def _try_serve_forever(self):
+    def _worker_run(self):
         self._handle_child_proc_signals()
 
-        self._before_worker_run()
+        self._on_worker_run()
 
         try:
             self._serve_forever()
@@ -144,7 +144,7 @@ class Worker(RoutesMixin, AppEventsMixin):
         except:
             logger.error('exc occur.', exc_info=True)
 
-    def _fork_workers(self, workers):
+    def _spawn_workers(self, workers):
         worker_env = copy.deepcopy(os.environ)
         worker_env.update({
             constants.WORKER_ENV_KEY: 'true'
