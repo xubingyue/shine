@@ -23,9 +23,9 @@ class Resulter(object):
     pull_address_list = None
     pub_address_list = None
 
-    # 等待处理的队列
+    # 等待处理的队列[data, ]
     to_deal_queue = None
-    # 等待发送的队列
+    # 等待发送的队列[(topic, data or task), ]
     to_send_queue = None
 
     def __init__(self):
@@ -87,12 +87,18 @@ class Resulter(object):
         """
 
         while 1:
-            task = self.to_deal_queue.get()
+            data = self.to_deal_queue.get()
+
+            task = gw_pb2.Task()
+            task.ParseFromString(data)
+
+            logger.debug('task:\n%s', task)
 
             # TODO 先只处理write_to_client的方式
             if task.cmd == constants.CMD_WRITE_TO_CLIENT:
                 # 原样处理过去
-                self.to_send_queue.put(task)
+                # 给data的好处是，就不用再序列化了
+                self.to_send_queue.put((task.proc_id, data))
 
     def _pull_forever(self):
         """
@@ -103,22 +109,19 @@ class Resulter(object):
         while 1:
             data = self.zmq_pull_server.recv()
 
-            task = gw_pb2.Task()
-            task.ParseFromString(data)
-
-            logger.debug('task:\n%s', task)
-
-            self.to_deal_queue.put(task)
+            self.to_deal_queue.put(data)
 
     def _pub_forever(self):
         """
         :return:
         """
         while 1:
-            task = self.to_send_queue.get()
+            topic, data = self.to_send_queue.get()
+            if isinstance(data, gw_pb2.Task):
+                data = data.SerializeToString()
 
             self.zmq_pub_server.send_multipart(
-                (task.proc_id, task.SerializeToString())
+                (topic, data)
             )
 
     def _serve_forever(self):
