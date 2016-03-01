@@ -17,7 +17,7 @@ from ..share.log import logger
 from ..share import constants, gw_pb2
 
 
-class Dispatcher(object):
+class Gateway(object):
     name = constants.NAME
     debug = False
 
@@ -94,7 +94,7 @@ class Dispatcher(object):
                         self.debug, workers)
 
             self._prepare_server()
-            setproctitle.setproctitle(self._make_proc_name('dispatcher:master'))
+            setproctitle.setproctitle(self._make_proc_name('gateway:master'))
             # 只能在主线程里面设置signals
             self._handle_parent_proc_signals()
             self.proc_mgr.fork_workers(workers, self._worker_run)
@@ -304,7 +304,7 @@ class Dispatcher(object):
         在worker里面执行的
         :return:
         """
-        setproctitle.setproctitle(self._make_proc_name('dispatcher:worker:%s' % index))
+        setproctitle.setproctitle(self._make_proc_name('gateway:worker:%s' % index))
         self.worker_uuid = uuid.uuid4().bytes
         self._handle_child_proc_signals()
         self._register_outer_server_handlers()

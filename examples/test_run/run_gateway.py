@@ -7,14 +7,14 @@ import sys
 sys.path.insert(0, '../../')
 
 from netkit.box import Box
-from zmq_server import Dispatcher
+from zmq_server import Gateway
 import constants
 
 
-dispatcher = Dispatcher(Box)
+gateway = Gateway(Box)
 
 if __name__ == '__main__':
-    dispatcher.run(
+    gateway.run(
         constants.DISPATCHER_OUTER_HOST,
         constants.DISPATCHER_OUTER_PORT,
         constants.DISPATCHER_INNER_ADDRESS_LIST,
