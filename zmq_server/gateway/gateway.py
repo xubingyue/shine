@@ -148,7 +148,9 @@ class Gateway(object):
 
             logger.debug('task:\n%s', task)
 
-            self._deal_task(task)
+            # 这样就不会内存泄露了
+            job = gevent.spawn(self._deal_task, task)
+            job.join()
 
     def _deal_task(self, task):
         """
