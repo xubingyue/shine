@@ -56,6 +56,6 @@ def close_users(request):
 
 if __name__ == '__main__':
     worker.run(
-        constants.DISPATCHER_INNER_ADDRESS_LIST,
+        constants.GATEWAY_INNER_ADDRESS_LIST,
         constants.FORWARDER_PULL_ADDRESS_LIST,
     )
