@@ -195,6 +195,7 @@ class Gateway(object):
 
                     # 先从存储删掉
                     if self.user_redis:
+                        # TODO 要确定与worker_uuid相等才能删除
                         self.user_redis.delete(self.user_redis_key_tpl % conn.uid)
 
                     self.user_dict.pop(conn.uid, None)
