@@ -59,17 +59,14 @@ class Gateway(object):
         if debug is not None:
             self.debug = debug
 
-        if self.user_redis_url:
+        if self.config['USER_REDIS_URL']:
             import redis
-            self.user_redis = redis.from_url(self.user_redis_url)
+            self.user_redis = redis.from_url(self.config['USER_REDIS_URL'])
 
-        workers = len(self.inner_address_list)
+        workers = len(self.config['GATEWAY_INNER_ADDRESS_LIST'])
 
         def run_wrapper():
-            logger.info('Running outer_host: %s, outer_port: %s, input_address_list: %s, output_address_list: %s, debug: %s, workers: %s',
-                        outer_host, outer_port,
-                        inner_address_list,
-                        forwarder_address_list,
+            logger.info('Running server, debug: %s, workers: %s',
                         self.debug, workers)
 
             self._prepare_server()
@@ -95,12 +92,15 @@ class Gateway(object):
 
         return proc_name
 
+    def _make_redis_key(self, uid):
+        return self.config['USER_REDIS_KEY_TPL'] % uid
+
     def _prepare_server(self):
         """
         准备server，因为fork之后就晚了
         :return:
         """
-        self.outer_server._prepare_server((self.outer_host, self.outer_port))
+        self.outer_server._prepare_server((self.config['GATEWAY_OUTER_HOST'], self.config['GATEWAY_OUTER_PORT']))
 
     def _serve_forever(self):
         """
@@ -108,7 +108,7 @@ class Gateway(object):
         :return:
         """
         job_list = []
-        for action in [self.outer_server._serve_forever, self._fetch_forwarders, self._send_task_to_worker]:
+        for action in [self.outer_server._serve_forever, self._fetch_from_forwarder, self._send_task_to_worker]:
             job = gevent.spawn(action)
             job_list.append(job)
 
@@ -124,7 +124,7 @@ class Gateway(object):
         self.inner_server = ctx.socket(zmq.PUSH)
         self.inner_server.bind(address)
 
-    def _fetch_forwarders(self):
+    def _fetch_from_forwarder(self):
         """
         从forwarder server那拿数据
         :return:
@@ -132,7 +132,7 @@ class Gateway(object):
 
         ctx = zmq.Context()
         self.forwarder_client = ctx.socket(zmq.SUB)
-        for address in self.forwarder_address_list:
+        for address in self.config['FORWARDER_OUTPUT_ADDRESS_LIST']:
             self.forwarder_client.connect(address)
         self.forwarder_client.setsockopt(zmq.SUBSCRIBE, self.proc_id)
 
@@ -145,10 +145,10 @@ class Gateway(object):
             logger.debug('task:\n%s', task)
 
             # 这样就不会内存泄露了
-            job = gevent.spawn(self._deal_task, task)
+            job = gevent.spawn(self._handle_task, task)
             job.join()
 
-    def _deal_task(self, task):
+    def _handle_task(self, task):
         """
         处理task
         :param task:
@@ -175,7 +175,7 @@ class Gateway(object):
                     # 先从存储删掉
                     if self.user_redis:
                         # TODO 要确定与worker_uuid相等才能删除
-                        self.user_redis.delete(self.user_redis_key_tpl % conn.uid)
+                        self.user_redis.delete(self._make_redis_key(conn.uid))
 
                     self.user_dict.pop(conn.uid, None)
                     conn.uid = conn.userdata = None
@@ -186,14 +186,14 @@ class Gateway(object):
 
                 # 后写入存储
                 if self.user_redis:
-                    self.user_redis.set(self.user_redis_key_tpl % conn.uid, self.proc_id, ex=self.user_redis_maxage)
+                    self.user_redis.set(self._make_redis_key(conn.uid), self.proc_id, ex=self.config['USER_REDIS_MAXAGE'])
 
         elif task.cmd == constants.CMD_LOGOUT_CLIENT:
             conn = self.conn_dict.get(task.client_id)
             if conn:
                 if conn.uid is not None:
                     if self.user_redis:
-                        self.user_redis.delete(self.user_redis_key_tpl % conn.uid)
+                        self.user_redis.delete(self._make_redis_key(conn.uid))
 
                     self.user_dict.pop(conn.uid, None)
                     conn.uid = conn.userdata = None
@@ -254,7 +254,7 @@ class Gateway(object):
             self.conn_dict.pop(conn.id, None)
             if conn.uid is not None:
                 if self.user_redis:
-                    self.user_redis.delete(self.user_redis_key_tpl % conn.uid)
+                    self.user_redis.delete(self._make_redis_key(conn.uid))
 
                 self.user_dict.pop(conn.uid, None)
                 conn.uid = conn.userdata = None
@@ -288,7 +288,7 @@ class Gateway(object):
         self.proc_id = uuid.uuid4().bytes
         self._handle_child_proc_signals()
         self._register_outer_server_handlers()
-        self._start_inner_server(self.inner_address_list[index])
+        self._start_inner_server(self.config['GATEWAY_INNER_ADDRESS_LIST'][index])
 
         try:
             self._serve_forever()
