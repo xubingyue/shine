@@ -101,7 +101,7 @@ class AppEventsMixin(object):
     def after_response(self, f):
         """
         在 stream.write 之后，传入encode之后的data
-        f(conn, response, result)
+        f(conn, response)
         """
 
     @_reg_event_handler
@@ -193,7 +193,7 @@ class BlueprintEventsMixin(object):
     def after_app_response(self, f):
         """
         在 stream.write 之后，传入encode之后的data
-        f(conn, response, result)
+        f(conn, response)
         """
 
     @_reg_event_handler
