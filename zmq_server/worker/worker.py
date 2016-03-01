@@ -15,44 +15,49 @@ from .connection import Connection
 from .mixins import RoutesMixin, AppEventsMixin
 from ..share.log import logger
 from ..share import constants
+from ..share.config import ConfigAttribute, Config
 
 
 class Worker(RoutesMixin, AppEventsMixin):
+    ############################## configurable begin ##############################
 
     # 显示的进程名
     name = constants.NAME
-
+    # 消息协议类
+    box_class = None
+    # connection 类
     connection_class = Connection
+    # request 类
     request_class = Request
 
-    box_class = None
+    # 调试模式
+    debug = ConfigAttribute('DEBUG')
 
-    debug = False
+    # 最多回应一次
+    rsp_once = True
+    # 处理task超时(秒). 超过后worker会自杀. None 代表永不超时
+    work_timeout = None
+    # 停止子进程超时(秒). 使用 TERM 进行停止时，如果超时未停止会发送KILL信号
+    stop_timeout = None
+
+    ############################## configurable end   ##############################
+
+    config = None
+
     got_first_request = False
     blueprints = None
     # 是否有效(父进程中代表程序有效，子进程中代表worker是否有效)
     enable = True
     # 子进程列表
     processes = None
-    # 最多回应一次
-    rsp_once = True
-    # 处理job超时(秒). 超过后worker会自杀. None 代表永不超时
-    job_timeout = None
-    # 停止子进程超时(秒). 使用 TERM 进行停止时，如果超时未停止会发送KILL信号
-    stop_timeout = None
 
-    # 连接到worker分配
-    worker_address_list = None
-
-    # 将结果发送过去
-    forwarder_address_list = None
-
-    # 连接到result server的连接
-    zmq_forwarder_client = None
+    # 连接到forwarder的连接
+    forwarder_client = None
 
     def __init__(self, box_class):
         RoutesMixin.__init__(self)
         AppEventsMixin.__init__(self)
+        self.config = Config(defaults=constants.DEFAULT_CONFIG)
         self.blueprints = list()
         self.processes = list()
         self.box_class = box_class
@@ -60,19 +65,14 @@ class Worker(RoutesMixin, AppEventsMixin):
     def register_blueprint(self, blueprint):
         blueprint.register_to_app(self)
 
-    def run(self, worker_address_list, forwarder_address_list, debug=None, workers=None):
+    def run(self, debug=None, workers=None):
         """
 
-        :param worker_address_list:  tcp://127.0.0.1:7100
-        :param forwarder_address_list: tcp://127.0.0.1:7200
         :param debug:
         :param workers:
         :return:
         """
         self._validate_cmds()
-
-        self.worker_address_list = worker_address_list
-        self.forwarder_address_list = forwarder_address_list
 
         if debug is not None:
             self.debug = debug
@@ -81,17 +81,17 @@ class Worker(RoutesMixin, AppEventsMixin):
 
         if os.getenv(constants.WORKER_ENV_KEY) != 'true':
             # 主进程
-            logger.info('Connect to server on worker_address_list: %s, output_address_list: %s, debug: %s, workers: %s',
-                        self.worker_address_list, self.forwarder_address_list, self.debug, workers)
+            logger.info('Connect to server , debug: %s, workers: %s',
+                        self.debug, workers)
 
             # 设置进程名
-            setproctitle.setproctitle(self._make_proc_name('master'))
+            setproctitle.setproctitle(self._make_proc_name('app:master'))
             # 只能在主线程里面设置signals
             self._handle_parent_proc_signals()
             self._spawn_workers(workers)
         else:
             # 子进程
-            setproctitle.setproctitle(self._make_proc_name('worker'))
+            setproctitle.setproctitle(self._make_proc_name('app:app'))
             self._worker_run()
 
     def _make_proc_name(self, subtitle):
@@ -248,7 +248,7 @@ class Worker(RoutesMixin, AppEventsMixin):
         signal.signal(signal.SIGHUP, safe_stop_handler)
 
     def _serve_forever(self):
-        conn = self.connection_class(self, self.worker_address_list)
+        conn = self.connection_class(self, self.config['GATEWAY_INNER_ADDRESS_LIST'])
         conn.run()
 
     def _connect_to_forwarder_server(self):
@@ -258,6 +258,6 @@ class Worker(RoutesMixin, AppEventsMixin):
         """
 
         ctx = zmq.Context()
-        self.zmq_forwarder_client = ctx.socket(zmq.PUSH)
-        for address in self.forwarder_address_list:
-            self.zmq_forwarder_client.connect(address)
+        self.forwarder_client = ctx.socket(zmq.PUSH)
+        for address in self.config['FORWARDER_INPUT_ADDRESS_LIST']:
+            self.forwarder_client.connect(address)

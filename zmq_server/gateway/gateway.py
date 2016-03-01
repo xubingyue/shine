@@ -284,7 +284,7 @@ class Gateway(object):
         在worker里面执行的
         :return:
         """
-        setproctitle.setproctitle(self._make_proc_name('gateway:worker:%s' % index))
+        setproctitle.setproctitle(self._make_proc_name('gateway:app:%s' % index))
         self.proc_id = uuid.uuid4().bytes
         self._handle_child_proc_signals()
         self._register_outer_server_handlers()

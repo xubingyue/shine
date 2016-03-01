@@ -11,7 +11,7 @@ from ..share.log import logger
 
 class Connection(object):
 
-    job_info = None
+    work_progress = None
 
     address_list = None
     zmq_client = None
@@ -26,7 +26,7 @@ class Connection(object):
             self.zmq_client.connect(address)
 
     def run(self):
-        thread.start_new_thread(self._monitor_job_timeout, ())
+        thread.start_new_thread(self._monitor_work_timeout, ())
         while 1:
             try:
                 self._handle()
@@ -35,22 +35,22 @@ class Connection(object):
             except:
                 logger.error('exc occur.', exc_info=True)
 
-    def _monitor_job_timeout(self):
+    def _monitor_work_timeout(self):
         """
-        监控job的耗时
+        监控work的耗时
         :return:
         """
 
         while self.app.enable:
             time.sleep(1)
 
-            job_info = self.job_info
-            if job_info:
-                past_time = time.time() - job_info['begin_time']
-                if self.app.job_timeout is not None and past_time > self.app.job_timeout:
+            work_progress = self.work_progress
+            if work_progress:
+                past_time = time.time() - work_progress['begin_time']
+                if self.app.work_timeout is not None and past_time > self.app.work_timeout:
                     # 说明worker的处理时间已经太长了
-                    logger.error('job is timeout: %s / %s, request: %s',
-                                 past_time, self.app.job_timeout, job_info['request'])
+                    logger.error('work timeout: %s / %s, request: %s',
+                                 past_time, self.app.work_timeout, work_progress['request'])
                     # 强制从子线程退出worker
                     os._exit(-1)
 
@@ -75,7 +75,7 @@ class Connection(object):
         for bp in self.app.blueprints:
             bp.events.before_app_response(self, data)
 
-        self.app.zmq_forwarder_client.send(data)
+        self.app.forwarder_client.send(data)
 
         for bp in self.app.blueprints:
             bp.events.after_app_response(self, data)
@@ -112,13 +112,13 @@ class Connection(object):
 
         request = self.app.request_class(self, task)
 
-        # 设置job开始处理的时间和信息
-        self.job_info = dict(
+        # 设置task开始处理的时间和信息
+        self.work_progress = dict(
             begin_time=time.time(),
             request=request,
         )
         self._handle_request(request)
-        self.job_info = None
+        self.work_progress = None
 
     def _handle_request(self, request):
         """
