@@ -41,18 +41,29 @@ class Gateway(object):
     # 用户ID->conn
     user_dict = None
 
+    user_redis_url = None
+    user_redis_key_tpl = None
+    # 最长存储的秒数，因为有可能有些用户的数据没有正常清空
+    user_redis_maxage = None
+    # 存储存储userid->proc_id
+    user_redis = None
+
     def __init__(self, box_class):
         self.proc_mgr = ProcMgr()
         self.outer_server = Server(box_class)
         self.task_queue = Queue()
 
-    def run(self, outer_host, outer_port, inner_address_list, result_address_list, debug=None):
+    def run(self, outer_host, outer_port, inner_address_list, result_address_list,
+            user_redis_url=None, user_redis_key_tpl=None, user_redis_maxage=None,
+            debug=None):
         """
         启动
         :param outer_host: 外部地址 '0.0.0.0'
         :param outer_port: 外部地址 7100
         :param inner_address_list: 内部地址列表 [tcp://127.0.0.1:8833, ]，worker参数不需要了，就是内部地址列表的个数
         :param result_address_list: 结果地址列表 [tcp://127.0.0.1:8855, ]
+        :param user_redis_url: redis存储的url，不传的话，相当于不走分布式
+        :param user_redis_key_tpl: redis存储的key模板，如 'zmq:user:%s'
         :param debug: 是否debug
         :return:
         """
@@ -61,8 +72,14 @@ class Gateway(object):
         self.outer_port = outer_port
         self.inner_address_list = inner_address_list
         self.result_address_list = result_address_list
+        self.user_redis_url = user_redis_url
+        self.user_redis_key_tpl = user_redis_key_tpl
+        self.user_redis_maxage = user_redis_maxage
         self.conn_dict = dict()
         self.user_dict = weakref.WeakValueDictionary()
+        if self.user_redis_url:
+            import redis
+            self.user_redis = redis.from_url(self.user_redis_url)
 
         if debug is not None:
             self.debug = debug
@@ -172,18 +189,32 @@ class Gateway(object):
             if conn:
                 if conn.uid is not None:
                     # 旧的登录用户
+
+                    # 先从存储删掉
+                    if self.user_redis:
+                        self.user_redis.delete(self.user_redis_key_tpl % conn.uid)
+
                     self.user_dict.pop(conn.uid, None)
                     conn.uid = conn.userdata = None
 
                 conn.uid = task.uid
                 conn.userdata = task.userdata
                 self.user_dict[conn.uid] = conn
+
+                # 后写入存储
+                if self.user_redis:
+                    self.user_redis.set(self.user_redis_key_tpl % conn.uid, self.worker_uuid, ex=self.user_redis_maxage)
+
         elif task.cmd == constants.CMD_LOGOUT_CLIENT:
             conn = self.conn_dict.get(task.client_id)
             if conn:
                 if conn.uid is not None:
+                    if self.user_redis:
+                        self.user_redis.delete(self.user_redis_key_tpl % conn.uid)
+
                     self.user_dict.pop(conn.uid, None)
                     conn.uid = conn.userdata = None
+
         elif task.cmd == constants.CMD_WRITE_TO_USERS:
             rsp = gw_pb2.RspToUsers()
             rsp.ParseFromString(task.data)
@@ -238,6 +269,12 @@ class Gateway(object):
             # 删除
             logger.debug('conn.id: %r', conn.id)
             self.conn_dict.pop(conn.id, None)
+            if conn.uid is not None:
+                if self.user_redis:
+                    self.user_redis.delete(self.user_redis_key_tpl % conn.uid)
+
+                self.user_dict.pop(conn.uid, None)
+                conn.uid = conn.userdata = None
 
             task = gw_pb2.Task()
             task.proc_id = self.worker_uuid
