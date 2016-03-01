@@ -13,7 +13,7 @@ from ..share.log import logger
 from ..share import constants, gw_pb2
 
 
-class Resulter(object):
+class Forwarder(object):
     name = constants.NAME
     debug = False
 
@@ -73,7 +73,7 @@ class Resulter(object):
                         pub_address_list,
                         self.debug, workers)
 
-            setproctitle.setproctitle(self._make_proc_name('resulter:master'))
+            setproctitle.setproctitle(self._make_proc_name('forwarder:master'))
             # 只能在主线程里面设置signals
             self._handle_parent_proc_signals()
             self.proc_mgr.fork_workers(workers, self._worker_run)
@@ -266,7 +266,7 @@ class Resulter(object):
         在worker里面执行的
         :return:
         """
-        setproctitle.setproctitle(self._make_proc_name('resulter:worker:%s' % index))
+        setproctitle.setproctitle(self._make_proc_name('forwarder:worker:%s' % index))
         self._handle_child_proc_signals()
 
         self._start_pull_server(self.pull_address_list[index])
