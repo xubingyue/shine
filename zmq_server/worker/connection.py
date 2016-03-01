@@ -75,7 +75,7 @@ class Connection(object):
         for bp in self.app.blueprints:
             bp.events.before_app_response(self, data)
 
-        ret = self.app.zmq_result_client.send_string(data)
+        ret = self.app.zmq_result_client.send(data)
         if not ret:
             logger.error('connection write fail. data: %r', data)
 
@@ -87,7 +87,7 @@ class Connection(object):
 
     def _read_message(self):
 
-        msg = self.zmq_client.recv_string()
+        msg = self.zmq_client.recv()
 
         task = gw_pb2.Task()
         task.ParseFromString(msg)
@@ -128,12 +128,12 @@ class Connection(object):
         if not request.is_valid:
             return False
 
-        if request.gw_box.cmd == constants.CMD_CLIENT_CREATED:
+        if request.task.cmd == constants.CMD_CLIENT_CREATED:
             self.app.events.create_client(request)
             for bp in self.app.blueprints:
                 bp.events.create_app_client(request)
             return True
-        elif request.gw_box.cmd == constants.CMD_CLIENT_CLOSED:
+        elif request.task.cmd == constants.CMD_CLIENT_CLOSED:
             self.app.events.close_client(request)
             for bp in self.app.blueprints:
                 bp.events.close_app_client(request)

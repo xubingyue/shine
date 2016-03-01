@@ -105,7 +105,6 @@ class Gateway(object):
         :return:
         """
         self.outer_server._prepare_server((self.outer_host, self.outer_port))
-        self._register_server_handlers()
 
     def _serve_forever(self):
         """
@@ -160,9 +159,9 @@ class Gateway(object):
 
         while True:
             task = self.task_queue.get()
-            self.zmq_inner_server.send_string(task.SerializeToString())
+            self.zmq_inner_server.send(task.SerializeToString())
 
-    def _register_server_handlers(self):
+    def _register_inner_server_handlers(self):
         """
         注册server的一些回调
         :return:
@@ -212,6 +211,7 @@ class Gateway(object):
         setproctitle.setproctitle(self._make_proc_name('gateway:worker:%s' % index))
         self.worker_uuid = uuid.uuid4().bytes
         self._handle_child_proc_signals()
+        self._register_inner_server_handlers()
         self._start_innder_server(self.inner_address_list[index])
 
         try:
