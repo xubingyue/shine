@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
 
-import sys
-
 from gevent.server import StreamServer
 from netkit.stream import Stream
 
@@ -12,9 +10,6 @@ from ...share import constants
 
 
 class Server(AppEventsMixin):
-    enable = True
-    name = constants.NAME
-
     server_class = StreamServer
     connection_class = Connection
     stream_class = Stream
@@ -29,21 +24,6 @@ class Server(AppEventsMixin):
         AppEventsMixin.__init__(self)
         self.box_class = box_class
         self.stream_checker = self.box_class().check
-
-    def _make_proc_name(self, subtitle):
-        """
-        获取进程名称
-        :param subtitle:
-        :return:
-        """
-        proc_name = '[%s %s:%s] %s' % (
-            self.name,
-            constants.NAME,
-            subtitle,
-            ' '.join([sys.executable] + sys.argv)
-        )
-
-        return proc_name
 
     def _handle_stream(self, sock, address):
         self.connection_class(
