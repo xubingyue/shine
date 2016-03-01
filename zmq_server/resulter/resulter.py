@@ -97,7 +97,7 @@ class Resulter(object):
         """
         ctx = zmq.Context()
         self.zmq_pull_server = ctx.socket(zmq.PULL)
-        self.zmq_pull_server.connect(address)
+        self.zmq_pull_server.bind(address)
 
     def _start_pub_server(self, address):
         """
