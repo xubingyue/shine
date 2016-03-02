@@ -35,6 +35,9 @@ WORKER_ENV_KEY = 'ZMQ_WORKER'
 
 # 默认config参数
 DEFAULT_CONFIG = {
+    # 进程名
+    'NAME': 'zmq_server',
+
     # gateway, worker, forwarder 需要
     'DEBUG': False,
 
