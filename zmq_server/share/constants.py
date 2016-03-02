@@ -6,12 +6,6 @@ NAME = 'zmq_server'
 RET_INVALID_CMD = -10000
 RET_INTERNAL = -10001
 
-# 默认host和port
-SERVER_HOST = '127.0.0.1'
-SERVER_PORT = 7777
-SERVER_BACKLOG = 256
-
-
 # 命令字
 CMD_CLIENT_REQ              = 10  # 透传client请求
 CMD_CLIENT_CREATED          = 15  # 客户端连接建立
