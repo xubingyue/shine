@@ -22,7 +22,7 @@ class Worker(RoutesMixin, AppEventsMixin):
     ############################## configurable begin ##############################
 
     # 显示的进程名
-    name = constants.NAME
+    name = ConfigAttribute('NAME')
     # 消息协议类
     box_class = None
     # connection 类

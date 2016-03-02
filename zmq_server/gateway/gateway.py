@@ -19,9 +19,14 @@ from ..share.config import ConfigAttribute, Config
 
 
 class Gateway(object):
-    name = constants.NAME
-    config = None
+    ############################## configurable begin ##############################
+
+    name = ConfigAttribute('NAME')
     debug = ConfigAttribute('DEBUG')
+
+    ############################## configurable end   ##############################
+
+    config = None
 
     proc_mgr = None
     outer_server = None
