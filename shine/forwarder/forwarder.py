@@ -116,16 +116,21 @@ class Forwarder(object):
                     # 直接转发就好
                     self.to_send_queue.put((task.proc_id, data))
                 else:
-                    uid_list = set()
+                    # 这个是所有row合并在一起的uid_list，是为了快速获取proc_id而用的
+                    merged_uid_list = set()
                     rsp = shine_pb2.RspToUsers()
                     rsp.ParseFromString(task.data)
                     for row in rsp.rows:
-                        uid_list.update(set(row.uids))
+                        merged_uid_list.update(set(row.uids))
 
-                    uid_list = list(uid_list)  # 一定要变回来
-                    key_list = [self._make_redis_key(uid) for uid in uid_list]
+                    if -1 in merged_uid_list:
+                        merged_uid_list = self._get_all_uid_list()
+                    else:
+                        merged_uid_list = list(merged_uid_list)  # 一定要变回来
+
+                    key_list = [self._make_redis_key(uid) for uid in merged_uid_list]
                     proc_id_list = self.user_redis.mget(key_list)
-                    proc_id_to_uid_dict = dict(zip(uid_list, proc_id_list))
+                    proc_id_to_uid_dict = dict(zip(merged_uid_list, proc_id_list))
 
                     proc_id_to_rsp_dict = defaultdict(shine_pb2.RspToUsers)
 
@@ -134,7 +139,8 @@ class Forwarder(object):
 
                         uid_list = row.uids
                         if -1 in uid_list:
-                            uid_list = self._get_all_uid_list()
+                            # 如果这里有-1，那刚刚肯定也有，已经获取过一遍了，就不用再获取了
+                            uid_list = merged_uid_list
 
                         for uid in uid_list:
                             proc_id = proc_id_to_uid_dict.get(uid)
@@ -171,18 +177,18 @@ class Forwarder(object):
                     rsp = shine_pb2.CloseUsers()
                     rsp.ParseFromString(task.data)
 
-                    uid_list = list(rsp.uids)
-                    if -1 in uid_list:
-                        uid_list = self._get_all_uid_list()
+                    merged_uid_list = list(rsp.uids)
+                    if -1 in merged_uid_list:
+                        merged_uid_list = self._get_all_uid_list()
 
-                    key_list = [self._make_redis_key(uid) for uid in uid_list]
+                    key_list = [self._make_redis_key(uid) for uid in merged_uid_list]
 
                     proc_id_list = self.user_redis.mget(key_list)
-                    proc_id_to_uid_dict = dict(zip(uid_list, proc_id_list))
+                    proc_id_to_uid_dict = dict(zip(merged_uid_list, proc_id_list))
 
                     proc_id_to_rsp_dict = defaultdict(shine_pb2.CloseUsers)
 
-                    for uid in uid_list:
+                    for uid in merged_uid_list:
                         proc_id = proc_id_to_uid_dict.get(uid)
                         if proc_id is None:
                             continue
@@ -212,7 +218,7 @@ class Forwarder(object):
         :return:
         """
 
-        keys = self.user_redis.keys(self.config['USER_REDIS_KEY_PREFIX'])
+        keys = self.user_redis.keys(self.config['USER_REDIS_KEY_PREFIX'] + '*')
 
         return [int(key.replace(self.config['USER_REDIS_KEY_PREFIX'], '')) for key in keys]
 
