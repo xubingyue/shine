@@ -12,6 +12,7 @@ from ..share.proc_mgr import ProcMgr
 from ..share.log import logger
 from ..share import constants, shine_pb2
 from ..share.config import ConfigAttribute, Config
+from ..share.share_store import ShareStore
 
 
 class Forwarder(object):
@@ -33,8 +34,7 @@ class Forwarder(object):
     # 等待发送的队列[(topic, data or task), ]
     to_send_queue = None
 
-    # 存储存储userid->proc_id
-    user_redis = None
+    share_store = None
 
     def __init__(self):
         self.config = Config(defaults=constants.DEFAULT_CONFIG)
@@ -53,7 +53,12 @@ class Forwarder(object):
 
         if self.config['REDIS_URL']:
             import redis
-            self.user_redis = redis.from_url(self.config['REDIS_URL'])
+            rds = redis.from_url(self.config['REDIS_URL'])
+            self.share_store = ShareStore(rds,
+                                          self.config['REDIS_USER_KEY_PREFIX'],
+                                          self.config['REDIS_PROCS_KEY'],
+                                          self.config['REDIS_USER_MAXAGE'],
+                                          )
 
         if debug is not None:
             self.debug = debug
@@ -112,7 +117,7 @@ class Forwarder(object):
                 # 给data的好处是，就不用再序列化了
                 self.to_send_queue.put((task.proc_id, data))
             elif task.cmd == constants.CMD_WRITE_TO_USERS:
-                if not self.user_redis:
+                if not self.share_store:
                     # 直接转发就好
                     self.to_send_queue.put((task.proc_id, data))
                 else:
@@ -123,14 +128,9 @@ class Forwarder(object):
                     for row in rsp.rows:
                         merged_uid_list.update(set(row.uids))
 
-                    if -1 in merged_uid_list:
-                        merged_uid_list = self._get_all_uid_list()
-                    else:
-                        merged_uid_list = list(merged_uid_list)  # 一定要变回来
+                    merged_uid_list = list(merged_uid_list)  # 一定要变回来
 
-                    key_list = [self._make_redis_key(uid) for uid in merged_uid_list]
-                    proc_id_list = self.user_redis.mget(key_list)
-                    proc_id_to_uid_dict = dict(zip(merged_uid_list, proc_id_list))
+                    proc_id_to_uid_dict = self.share_store.get_users(merged_uid_list)
 
                     proc_id_to_rsp_dict = defaultdict(shine_pb2.RspToUsers)
 
@@ -139,8 +139,14 @@ class Forwarder(object):
 
                         uid_list = row.uids
                         if -1 in uid_list:
-                            # 如果这里有-1，那刚刚肯定也有，已经获取过一遍了，就不用再获取了
-                            uid_list = merged_uid_list
+                            # 给所有的topic都发一遍就好
+                            proc_id_list = self.share_store.get_procs()
+                            for proc_id in proc_id_list:
+                                # 所有proc都要收到这个消息并进行处理
+                                proc_id_to_rsp_dict[proc_id].rows.extend(row)
+
+                            # 直接跳到下一个row
+                            continue
 
                         for uid in uid_list:
                             proc_id = proc_id_to_uid_dict.get(uid)
@@ -170,37 +176,39 @@ class Forwarder(object):
 
                         self.to_send_queue.put((proc_id, rsp_task))
             elif task.cmd == constants.CMD_CLOSE_USERS:
-                if not self.user_redis:
+                if not self.share_store:
                     # 直接转发就好
                     self.to_send_queue.put((task.proc_id, data))
                 else:
+                    proc_id_to_rsp_dict = defaultdict(shine_pb2.CloseUsers)
+
                     rsp = shine_pb2.CloseUsers()
                     rsp.ParseFromString(task.data)
 
                     merged_uid_list = list(rsp.uids)
+
                     if -1 in merged_uid_list:
-                        merged_uid_list = self._get_all_uid_list()
+                        # 给所有的topic都发一遍就好
+                        proc_id_list = self.share_store.get_procs()
+                        for proc_id in proc_id_list:
+                            # 所有proc都要收到这个消息并进行处理
+                            proc_id_to_rsp_dict[proc_id] = rsp
+                    else:
+                        proc_id_to_uid_dict = self.share_store.get_users(merged_uid_list)
 
-                    key_list = [self._make_redis_key(uid) for uid in merged_uid_list]
+                        for uid in merged_uid_list:
+                            proc_id = proc_id_to_uid_dict.get(uid)
+                            if proc_id is None:
+                                continue
 
-                    proc_id_list = self.user_redis.mget(key_list)
-                    proc_id_to_uid_dict = dict(zip(merged_uid_list, proc_id_list))
+                            if proc_id not in proc_id_to_rsp_dict:
+                                new_rsp = shine_pb2.CloseUsers()
+                                new_rsp.userdata = rsp.userdata
+                                proc_id_to_rsp_dict[proc_id] = new_rsp
+                            else:
+                                new_rsp = proc_id_to_rsp_dict[proc_id]
 
-                    proc_id_to_rsp_dict = defaultdict(shine_pb2.CloseUsers)
-
-                    for uid in merged_uid_list:
-                        proc_id = proc_id_to_uid_dict.get(uid)
-                        if proc_id is None:
-                            continue
-
-                        if proc_id not in proc_id_to_rsp_dict:
-                            new_rsp = shine_pb2.CloseUsers()
-                            new_rsp.userdata = rsp.userdata
-                            proc_id_to_rsp_dict[proc_id] = new_rsp
-                        else:
-                            new_rsp = proc_id_to_rsp_dict[proc_id]
-
-                        new_rsp.uids.append(uid)
+                            new_rsp.uids.append(uid)
 
                     # 消息已经搞定了，现在就是发送了
                     for proc_id, rsp in proc_id_to_rsp_dict.items():
@@ -210,17 +218,6 @@ class Forwarder(object):
                         rsp_task.data = rsp.SerializeToString()
 
                         self.to_send_queue.put((proc_id, rsp_task))
-
-    def _get_all_uid_list(self):
-        """
-        获取全量用户id列表，可能会比较慢
-        但是如果放到hash表里，又会有没法过期的问题
-        :return:
-        """
-
-        keys = self.user_redis.keys(self.config['REDIS_USER_KEY_PREFIX'] + '*')
-
-        return [int(key.replace(self.config['REDIS_USER_KEY_PREFIX'], '')) for key in keys]
 
     def _handle_input_forever(self):
         """
