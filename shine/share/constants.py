@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-NAME = 'zmq_server'
+NAME = 'shine'
 
 # 系统返回码
 RET_INVALID_CMD = -10000
@@ -30,7 +30,7 @@ WORKER_ENV_KEY = 'ZMQ_WORKER'
 # 默认config参数
 DEFAULT_CONFIG = {
     # 进程名
-    'NAME': 'zmq_server',
+    'NAME': NAME,
 
     # gateway, worker, forwarder 需要
     'DEBUG': False,
