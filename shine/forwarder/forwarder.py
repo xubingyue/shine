@@ -138,7 +138,7 @@ class Forwarder(object):
                         proc_id_to_row_dict = dict()
 
                         uid_list = row.uids
-                        if -1 in uid_list:
+                        if set((-1, -2, -3)) & set(uid_list):
                             # 给所有的topic都发一遍就好
                             proc_id_list = self.share_store.get_procs()
                             for proc_id in proc_id_list:
@@ -187,7 +187,7 @@ class Forwarder(object):
 
                     merged_uid_list = list(rsp.uids)
 
-                    if -1 in merged_uid_list:
+                    if set((-1, -2, -3)) & set(merged_uid_list):
                         # 给所有的topic都发一遍就好
                         proc_id_list = self.share_store.get_procs()
                         for proc_id in proc_id_list:

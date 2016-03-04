@@ -215,20 +215,48 @@ class Gateway(object):
             rsp.ParseFromString(task.data)
 
             for row in rsp.rows:
-                for uid in row.uids:
-                    conn = self.user_dict.get(uid)
-                    if conn and (conn.userdata & row.userdata) == row.userdata:
-                        conn.write(row.buf)
+                # -1: 所有已登录连接
+                # -2: 所有连接
+                # -3: 所有未登陆连接
+                if -1 in row.uids:
+                    for conn in self.conn_dict.values():
+                        if conn and conn.uid and (conn.userdata & row.userdata) == row.userdata:
+                            conn.write(row.buf)
+                elif -2 in row.uids:
+                    for conn in self.conn_dict.values():
+                        if conn and (conn.userdata & row.userdata) == row.userdata:
+                            conn.write(row.buf)
+                elif -3 in row.uids:
+                    for conn in self.conn_dict.values():
+                        if conn and not conn.uid and (conn.userdata & row.userdata) == row.userdata:
+                            conn.write(row.buf)
+                else:
+                    for uid in row.uids:
+                        conn = self.user_dict.get(uid)
+                        if conn and (conn.userdata & row.userdata) == row.userdata:
+                            conn.write(row.buf)
 
         elif task.cmd == constants.CMD_CLOSE_USERS:
             rsp = shine_pb2.CloseUsers()
             rsp.ParseFromString(task.data)
 
-            for uid in rsp.uids:
-
-                conn = self.user_dict.get(uid)
-                if conn and (conn.userdata & rsp.userdata) == rsp.userdata:
-                    conn.close()
+            if -1 in rsp.uids:
+                for conn in self.conn_dict.values():
+                    if conn and conn.uid and (conn.userdata & rsp.userdata) == rsp.userdata:
+                        conn.close()
+            elif -2 in rsp.uids:
+                for conn in self.conn_dict.values():
+                    if conn and (conn.userdata & rsp.userdata) == rsp.userdata:
+                        conn.close()
+            elif -3 in rsp.uids:
+                for conn in self.conn_dict.values():
+                    if conn and not conn.uid and (conn.userdata & rsp.userdata) == rsp.userdata:
+                        conn.close()
+            else:
+                for uid in rsp.uids:
+                    conn = self.user_dict.get(uid)
+                    if conn and (conn.userdata & rsp.userdata) == rsp.userdata:
+                        conn.close()
 
     def _send_task_to_worker(self):
         """
