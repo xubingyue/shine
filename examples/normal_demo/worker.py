@@ -6,11 +6,11 @@ sys.path.insert(0, '../../')
 
 from netkit.box import Box
 from shine import Worker, logger
-import constants
+import config
 
 
 app = Worker(Box)
-app.config.from_object(constants)
+app.config.from_object(config)
 
 
 @app.create_client

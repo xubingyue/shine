@@ -8,11 +8,11 @@ from netkit.box import Box
 import time
 from shine import Trigger
 
-import constants
+import config
 
 
 def handle():
-    trigger = Trigger(Box, constants.FORWARDER_INPUT_ADDRESS_LIST)
+    trigger = Trigger(Box, config.FORWARDER_INPUT_ADDRESS_LIST)
 
     box = Box()
     box.cmd = 3
