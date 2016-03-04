@@ -143,7 +143,7 @@ class Forwarder(object):
                             proc_id_list = self.share_store.get_procs()
                             for proc_id in proc_id_list:
                                 # 所有proc都要收到这个消息并进行处理
-                                proc_id_to_rsp_dict[proc_id].rows.extend(row)
+                                proc_id_to_rsp_dict[proc_id].rows.extend([row])
 
                             # 直接跳到下一个row
                             continue
