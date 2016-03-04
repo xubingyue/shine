@@ -3,6 +3,7 @@
 from ..share.log import logger
 from ..share import constants
 from ..share.shine_pb2 import RspToUsers, CloseUsers, Task
+from ..trigger.trigger import Trigger
 
 
 class Request(object):
@@ -26,11 +27,14 @@ class Request(object):
     # 是否中断处理，即不调用view_func，主要用在before_request中
     interrupted = False
 
+    trigger = None
+
     def __init__(self, conn, task):
         self.conn = conn
         self.task = task
         # 赋值
         self.is_valid = self._parse_raw_data()
+        self.trigger = Trigger(self.app.box_class, zmq_client=self.app.forwarder_client)
 
     @property
     def app(self):
@@ -119,55 +123,11 @@ class Request(object):
 
         return succ
 
-    def write_to_users(self, data_list):
-        """
-        格式为
-        [(uids, box), (uids, box, userdata) ...]
-        :param data_list: userdata可不传，默认为0，conn.userdata & userdata == userdata
-        :return:
-        """
-
-        msg = RspToUsers()
-
-        for data_tuple in data_list:
-            if len(data_tuple) == 2:
-                uids, data = data_tuple
-                userdata = None
-            else:
-                uids, data, userdata = data_tuple
-
-            if isinstance(data, self.app.box_class):
-                data = data.pack()
-            elif isinstance(data, dict):
-                data = self.app.box_class(data).pack()
-
-            row = msg.rows.add()
-            row.buf = data
-            row.userdata = userdata or 0
-            row.uids.extend(uids)
-
-        task = Task()
-        task.cmd = constants.CMD_WRITE_TO_USERS
-        task.data = msg.SerializeToString()
-
-        return self.conn.write(task.SerializeToString())
-
     def close_client(self):
         task = Task()
         task.client_id = self.task.client_id
         task.proc_id = self.task.proc_id
         task.cmd = constants.CMD_CLOSE_CLIENT
-
-        return self.conn.write(task.SerializeToString())
-
-    def close_users(self, uids, userdata=None):
-        msg = CloseUsers()
-        msg.uids.extend(uids)
-        msg.userdata = userdata or 0
-
-        task = Task()
-        task.cmd = constants.CMD_CLOSE_USERS
-        task.data = msg.SerializeToString()
 
         return self.conn.write(task.SerializeToString())
 
@@ -190,25 +150,25 @@ class Request(object):
 
         return self.conn.write(task.SerializeToString())
 
+    def write_to_users(self, data_list):
+        """
+        格式为
+        [(uids, box), (uids, box, userdata) ...]
+        :param data_list: userdata可不传，默认为0，conn.userdata & userdata == userdata
+        :return:
+        """
+
+        return self.trigger.write_to_users(data_list)
+
+    def close_users(self, uids, userdata=None):
+        return self.trigger.close_users(uids, userdata)
+
     def write_to_worker(self, data):
         """
         透传到worker进行处理
         """
 
-        task = Task()
-        task.client_id = self.task.client_id
-        task.proc_id = self.task.proc_id
-        task.cmd = constants.CMD_WRITE_TO_WORKER
-
-        if isinstance(data, self.app.box_class):
-            # 打包
-            data = data.pack()
-        elif isinstance(data, dict):
-            data = self.app.box_class(data).pack()
-
-        task.data = data
-
-        return self.conn.write(task.SerializeToString())
+        return self.trigger.write_to_worker(data, proc_id=self.task.proc_id)
 
     def interrupt(self, data=None):
         """
