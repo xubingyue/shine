@@ -132,7 +132,11 @@ class Forwarder(object):
                     for row in rsp.rows:
                         proc_id_to_row_dict = dict()
 
-                        for uid in row.uids:
+                        uid_list = row.uids
+                        if -1 in uid_list:
+                            uid_list = self._get_all_uid_list()
+
+                        for uid in uid_list:
                             proc_id = proc_id_to_uid_dict.get(uid)
                             if proc_id is None:
                                 continue
@@ -168,6 +172,8 @@ class Forwarder(object):
                     rsp.ParseFromString(task.data)
 
                     uid_list = list(rsp.uids)
+                    if -1 in uid_list:
+                        uid_list = self._get_all_uid_list()
 
                     key_list = [self._make_redis_key(uid) for uid in uid_list]
 
@@ -206,7 +212,9 @@ class Forwarder(object):
         :return:
         """
 
-        return self.user_redis.keys(self.config['USER_REDIS_KEY_PREFIX'])
+        keys = self.user_redis.keys(self.config['USER_REDIS_KEY_PREFIX'])
+
+        return [int(key.replace(self.config['USER_REDIS_KEY_PREFIX'], '')) for key in keys]
 
     def _handle_input_forever(self):
         """
