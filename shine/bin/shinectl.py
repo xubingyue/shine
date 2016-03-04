@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+# gateway和forwarder都必须用gevent全部patch
+from gevent import monkey; monkey.patch_all()
+
 import click
 from shine import Gateway, Forwarder
 from netkit.box import Box
