@@ -17,13 +17,13 @@ def gateway(config):
     启动gateway
     :return:
     """
-    gateway = Gateway(Box)
+    server = Gateway(Box)
     if config.endswith('.py'):
-        gateway.config.from_pyfile(config)
+        server.config.from_pyfile(config)
     else:
-        gateway.config.from_object(config)
+        server.config.from_object(config)
 
-    gateway.run()
+    server.run()
 
 
 @cli.command()
@@ -33,14 +33,14 @@ def forwarder(config):
     启动forwarder
     :return:
     """
-    forwarder = Forwarder()
+    server = Forwarder()
 
     if config.endswith('.py'):
-        forwarder.config.from_pyfile(config)
+        server.config.from_pyfile(config)
     else:
-        forwarder.config.from_object(config)
+        server.config.from_object(config)
 
-    forwarder.run()
+    server.run()
 
 
 if __name__ == '__main__':
