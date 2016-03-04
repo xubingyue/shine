@@ -5,8 +5,7 @@ from gevent.server import StreamServer
 from netkit.stream import Stream
 
 from mixins import AppEventsMixin
-from .connection import Connection
-from ...share import constants
+from connection import Connection
 
 
 class Server(AppEventsMixin):
@@ -17,12 +16,13 @@ class Server(AppEventsMixin):
     box_class = None
     stream_checker = None
 
-    backlog = constants.SERVER_BACKLOG
+    backlog = None
     server = None
 
-    def __init__(self, box_class):
+    def __init__(self, box_class, backlog):
         AppEventsMixin.__init__(self)
         self.box_class = box_class
+        self.backlog = backlog
         self.stream_checker = self.box_class().check
 
     def _handle_stream(self, sock, address):

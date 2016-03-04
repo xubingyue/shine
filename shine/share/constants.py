@@ -39,6 +39,8 @@ DEFAULT_CONFIG = {
     'GATEWAY_OUTER_HOST': None,
     # gateway 需要
     'GATEWAY_OUTER_PORT': None,
+    # gateway 的backlog
+    'GATEWAY_BACKLOG': 256,
 
     # gateway, worker 需要
     'GATEWAY_INNER_ADDRESS_LIST': None,
