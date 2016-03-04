@@ -16,6 +16,7 @@ from ..share.proc_mgr import ProcMgr
 from ..share.log import logger
 from ..share import constants, shine_pb2
 from ..share.config import ConfigAttribute, Config
+from ..share.share_store import ShareStore
 
 
 class Gateway(object):
@@ -43,8 +44,8 @@ class Gateway(object):
     # 用户ID->conn
     user_dict = None
 
-    # 存储存储userid->proc_id
-    user_redis = None
+    # 共享存储
+    share_store = None
 
     def __init__(self, box_class):
         self.config = Config(defaults=constants.DEFAULT_CONFIG)
@@ -66,7 +67,12 @@ class Gateway(object):
 
         if self.config['REDIS_URL']:
             import redis
-            self.user_redis = redis.from_url(self.config['REDIS_URL'])
+            rds = redis.from_url(self.config['REDIS_URL'])
+            self.share_store = ShareStore(rds,
+                                          self.config['REDIS_USER_KEY_PREFIX'],
+                                          self.config['REDIS_PROCS_KEY'],
+                                          self.config['REDIS_USER_MAXAGE'],
+                                          )
 
         workers = len(self.config['GATEWAY_INNER_ADDRESS_LIST'])
 
@@ -180,9 +186,8 @@ class Gateway(object):
                     # 旧的登录用户
 
                     # 先从存储删掉
-                    if self.user_redis:
-                        # TODO 要确定与worker_uuid相等才能删除
-                        self.user_redis.delete(self._make_redis_key(conn.uid))
+                    if self.share_store:
+                        self.share_store.remove_user(conn.uid, self.proc_id)
 
                     self.user_dict.pop(conn.uid, None)
                     conn.uid = conn.userdata = None
@@ -192,15 +197,15 @@ class Gateway(object):
                 self.user_dict[conn.uid] = conn
 
                 # 后写入存储
-                if self.user_redis:
-                    self.user_redis.set(self._make_redis_key(conn.uid), self.proc_id, ex=self.config['REDIS_USER_MAXAGE'])
+                if self.share_store:
+                    self.share_store.add_user(conn.uid, self.proc_id)
 
         elif task.cmd == constants.CMD_LOGOUT_CLIENT:
             conn = self.conn_dict.get(task.client_id)
             if conn:
                 if conn.uid is not None:
-                    if self.user_redis:
-                        self.user_redis.delete(self._make_redis_key(conn.uid))
+                    if self.share_store:
+                        self.share_store.remove_user(conn.uid)
 
                     self.user_dict.pop(conn.uid, None)
                     conn.uid = conn.userdata = None
@@ -260,8 +265,8 @@ class Gateway(object):
             logger.debug('conn.id: %r', conn.id)
             self.conn_dict.pop(conn.id, None)
             if conn.uid is not None:
-                if self.user_redis:
-                    self.user_redis.delete(self._make_redis_key(conn.uid))
+                if self.share_store:
+                    self.share_store.remove_user(conn.uid, self.proc_id)
 
                 self.user_dict.pop(conn.uid, None)
                 conn.uid = conn.userdata = None
