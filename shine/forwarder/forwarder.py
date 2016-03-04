@@ -87,7 +87,7 @@ class Forwarder(object):
         return proc_name
 
     def _make_redis_key(self, uid):
-        return self.config['USER_REDIS_KEY_TPL'] % uid
+        return self.config['USER_REDIS_KEY_PREFIX'] + str(uid)
 
     def _handle_task_forever(self):
         """
@@ -198,6 +198,14 @@ class Forwarder(object):
                         rsp_task.data = rsp.SerializeToString()
 
                         self.to_send_queue.put((proc_id, rsp_task))
+
+    def _get_all_uid_list(self):
+        """
+        获取全量用户id列表
+        :return:
+        """
+
+        return self.user_redis.keys('')
 
     def _handle_input_forever(self):
         """

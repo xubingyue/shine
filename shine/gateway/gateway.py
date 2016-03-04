@@ -98,7 +98,7 @@ class Gateway(object):
         return proc_name
 
     def _make_redis_key(self, uid):
-        return self.config['USER_REDIS_KEY_TPL'] % uid
+        return self.config['USER_REDIS_KEY_PREFIX'] + str(uid)
 
     def _prepare_server(self):
         """

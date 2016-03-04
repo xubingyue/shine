@@ -21,4 +21,4 @@ FORWARDER_OUTPUT_ADDRESS_LIST = [
 ]
 
 USER_REDIS_URL = 'redis://127.0.0.1:6379/0'
-USER_REDIS_KEY_TPL = 'zmq:user:%s'
+USER_REDIS_KEY_PREFIX = 'shine:user:'
