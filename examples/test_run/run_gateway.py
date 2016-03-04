@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, '../../')
 
 from netkit.box import Box
-from zmq_server import Gateway
+from shine import Gateway
 import constants
 
 

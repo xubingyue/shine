@@ -5,7 +5,7 @@ from gevent import monkey; monkey.patch_all()
 import sys
 sys.path.insert(0, '../../')
 
-from zmq_server import Forwarder
+from shine import Forwarder
 import constants
 
 

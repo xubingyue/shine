@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, '../../')
 
 from netkit.box import Box
-from zmq_server import Worker, logger
+from shine import Worker, logger
 import constants
 
 
