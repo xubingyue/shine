@@ -201,11 +201,12 @@ class Forwarder(object):
 
     def _get_all_uid_list(self):
         """
-        获取全量用户id列表
+        获取全量用户id列表，可能会比较慢
+        但是如果放到hash表里，又会有没法过期的问题
         :return:
         """
 
-        return self.user_redis.keys('')
+        return self.user_redis.keys(self.config['USER_REDIS_KEY_PREFIX'])
 
     def _handle_input_forever(self):
         """
