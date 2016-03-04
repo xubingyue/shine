@@ -166,6 +166,8 @@ class Gateway(object):
                 conn.write(task.data)
         elif task.cmd == constants.CMD_WRITE_TO_WORKER:
             # 重新转发处理
+            # 标记一下
+            task.inner = 1
             self.task_queue.put(task)
         elif task.cmd == constants.CMD_CLOSE_CLIENT:
             conn = self.conn_dict.get(task.client_id)
