@@ -10,7 +10,8 @@ s = ctx.socket(zmq.PUB)
 s.bind(bind_to)
 
 while True:
-    s.send_multipart(['123', 'body'])
+    # s.send_multipart(['123', 'body'])
+    s.send('ok')
     time.sleep(1)
 
 raw_input()

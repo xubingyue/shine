@@ -51,9 +51,9 @@ class Forwarder(object):
 
         assert len(self.config['FORWARDER_INPUT_ADDRESS_LIST']) == len(self.config['FORWARDER_OUTPUT_ADDRESS_LIST'])
 
-        if self.config['USER_REDIS_URL']:
+        if self.config['REDIS_URL']:
             import redis
-            self.user_redis = redis.from_url(self.config['USER_REDIS_URL'])
+            self.user_redis = redis.from_url(self.config['REDIS_URL'])
 
         if debug is not None:
             self.debug = debug
@@ -87,7 +87,7 @@ class Forwarder(object):
         return proc_name
 
     def _make_redis_key(self, uid):
-        return self.config['USER_REDIS_KEY_PREFIX'] + str(uid)
+        return self.config['REDIS_USER_KEY_PREFIX'] + str(uid)
 
     def _handle_task_forever(self):
         """
@@ -218,9 +218,9 @@ class Forwarder(object):
         :return:
         """
 
-        keys = self.user_redis.keys(self.config['USER_REDIS_KEY_PREFIX'] + '*')
+        keys = self.user_redis.keys(self.config['REDIS_USER_KEY_PREFIX'] + '*')
 
-        return [int(key.replace(self.config['USER_REDIS_KEY_PREFIX'], '')) for key in keys]
+        return [int(key.replace(self.config['REDIS_USER_KEY_PREFIX'], '')) for key in keys]
 
     def _handle_input_forever(self):
         """

@@ -20,5 +20,5 @@ FORWARDER_OUTPUT_ADDRESS_LIST = [
     'tcp://127.0.0.1:7401',
 ]
 
-USER_REDIS_URL = 'redis://127.0.0.1:6379/0'
-USER_REDIS_KEY_PREFIX = 'shine:user:'
+REDIS_URL = 'redis://127.0.0.1:6379/0'
+REDIS_USER_KEY_PREFIX = 'shine:user:'

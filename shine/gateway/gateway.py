@@ -64,9 +64,9 @@ class Gateway(object):
         if debug is not None:
             self.debug = debug
 
-        if self.config['USER_REDIS_URL']:
+        if self.config['REDIS_URL']:
             import redis
-            self.user_redis = redis.from_url(self.config['USER_REDIS_URL'])
+            self.user_redis = redis.from_url(self.config['REDIS_URL'])
 
         workers = len(self.config['GATEWAY_INNER_ADDRESS_LIST'])
 
@@ -98,7 +98,7 @@ class Gateway(object):
         return proc_name
 
     def _make_redis_key(self, uid):
-        return self.config['USER_REDIS_KEY_PREFIX'] + str(uid)
+        return self.config['REDIS_USER_KEY_PREFIX'] + str(uid)
 
     def _prepare_server(self):
         """
@@ -193,7 +193,7 @@ class Gateway(object):
 
                 # 后写入存储
                 if self.user_redis:
-                    self.user_redis.set(self._make_redis_key(conn.uid), self.proc_id, ex=self.config['USER_REDIS_MAXAGE'])
+                    self.user_redis.set(self._make_redis_key(conn.uid), self.proc_id, ex=self.config['REDIS_USER_MAXAGE'])
 
         elif task.cmd == constants.CMD_LOGOUT_CLIENT:
             conn = self.conn_dict.get(task.client_id)
