@@ -50,6 +50,19 @@ class ShareStore(object):
 
         return self.rds.delete(self._make_redis_key(uid))
 
+    def get_users(self, uid_list):
+        """
+        批量获取用户信息 {
+            1: "223",
+            2: "333",
+        }
+        :param uid_list:
+        :return:
+        """
+        proc_id_list = self.rds.mget([self._make_redis_key(uid) for uid in uid_list])
+
+        return dict(zip(uid_list, proc_id_list))
+
     def add_proc(self, proc_id):
         """
         添加proc_id
@@ -65,6 +78,13 @@ class ShareStore(object):
         """
 
         return self.rds.srem(self.procs_key, proc_id)
+
+    def get_procs(self):
+        """
+        获取proc集合
+        :return:
+        """
+        return self.rds.smembers(self.procs_key)
 
     def _make_redis_key(self, uid):
         return self.user_key_prefix + str(uid)
