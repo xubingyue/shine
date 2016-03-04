@@ -7,24 +7,27 @@ from ..share import constants
 class Trigger(object):
 
     box_class = None
-    forwarder_input_address_list = None
 
     zmq_client = None
 
-    def __init__(self, box_class, forwarder_input_address_list, use_gevent=False):
+    def __init__(self, box_class, forwarder_input_address_list=None, zmq_client=None, use_gevent=False):
 
-        if use_gevent:
-            import zmq.green as zmq  # for gevent
-        else:
-            import zmq
+        assert not (forwarder_input_address_list is zmq_client is None)
 
         self.box_class = box_class
-        self.forwarder_input_address_list = forwarder_input_address_list
 
-        ctx = zmq.Context()
-        self.zmq_client = ctx.socket(zmq.PUSH)
-        for address in forwarder_input_address_list:
-            self.zmq_client.connect(address)
+        if forwarder_input_address_list is not None:
+            if use_gevent:
+                import zmq.green as zmq  # for gevent
+            else:
+                import zmq
+
+            ctx = zmq.Context()
+            self.zmq_client = ctx.socket(zmq.PUSH)
+            for address in forwarder_input_address_list:
+                self.zmq_client.connect(address)
+        else:
+            self.zmq_client = zmq_client
 
     def write_to_users(self, data_list):
         """
