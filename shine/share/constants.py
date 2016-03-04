@@ -24,7 +24,7 @@ CMD_LOGOUT_CLIENT           = 270 # 登出用户
 
 
 # worker的env
-WORKER_ENV_KEY = 'ZMQ_WORKER'
+WORKER_ENV_KEY = 'SHINE_WORKER'
 
 
 # 默认config参数
