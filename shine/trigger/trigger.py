@@ -70,14 +70,14 @@ class Trigger(object):
 
         return self.zmq_client.send(task.SerializeToString())
 
-    def write_to_worker(self, data):
+    def write_to_worker(self, data, proc_id):
         """
         透传到worker进行处理
+        还是得把proc_id传过来，告诉forwarder，是要哪个proc_id进行处理
         """
 
         task = Task()
-        task.client_id = self.task.client_id
-        task.proc_id = self.task.proc_id
+        task.proc_id = proc_id
         task.cmd = constants.CMD_WRITE_TO_WORKER
 
         if isinstance(data, self.box_class):
