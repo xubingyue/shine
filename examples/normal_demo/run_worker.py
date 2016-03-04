@@ -25,7 +25,8 @@ def close_client(request):
 
 @app.route(2)
 def login(request):
-    request.login_client(1, 2)
+
+    request.login_client(request.box.get_json()['uid'], 2)
     # request.logout_client()
     request.write_to_client(dict(
         ret=100,

@@ -190,7 +190,7 @@ class Gateway(object):
                         self.share_store.remove_user(conn.uid, self.proc_id)
 
                     self.user_dict.pop(conn.uid, None)
-                    conn.uid = conn.userdata = None
+                    conn.uid = conn.userdata = 0
 
                 conn.uid = task.uid
                 conn.userdata = task.userdata
@@ -208,7 +208,7 @@ class Gateway(object):
                         self.share_store.remove_user(conn.uid)
 
                     self.user_dict.pop(conn.uid, None)
-                    conn.uid = conn.userdata = None
+                    conn.uid = conn.userdata = 0
 
         elif task.cmd == constants.CMD_WRITE_TO_USERS:
             rsp = shine_pb2.RspToUsers()
@@ -297,7 +297,7 @@ class Gateway(object):
                     self.share_store.remove_user(conn.uid, self.proc_id)
 
                 self.user_dict.pop(conn.uid, None)
-                conn.uid = conn.userdata = None
+                conn.uid = conn.userdata = 0
 
             task = shine_pb2.Task()
             task.proc_id = self.proc_id

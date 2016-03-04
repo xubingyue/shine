@@ -13,10 +13,10 @@ class Connection(object):
     id = None
 
     # 登录之后的用户ID
-    uid = None
+    uid = 0
 
     # 用户userdata
-    userdata = None
+    userdata = 0
 
     def __init__(self, app, stream, address):
         self.id = uuid.uuid4().bytes
