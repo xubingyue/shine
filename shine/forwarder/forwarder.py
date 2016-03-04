@@ -10,7 +10,7 @@ import zmq.green as zmq  # for gevent
 from collections import defaultdict
 from ..share.proc_mgr import ProcMgr
 from ..share.log import logger
-from ..share import constants, gw_pb2
+from ..share import constants, shine_pb2
 from ..share.config import ConfigAttribute, Config
 
 
@@ -98,7 +98,7 @@ class Forwarder(object):
         while 1:
             data = self.to_deal_queue.get()
 
-            task = gw_pb2.Task()
+            task = shine_pb2.Task()
             task.ParseFromString(data)
 
             logger.debug('task:\n%s', task)
@@ -117,7 +117,7 @@ class Forwarder(object):
                     self.to_send_queue.put((task.proc_id, data))
                 else:
                     uid_list = set()
-                    rsp = gw_pb2.RspToUsers()
+                    rsp = shine_pb2.RspToUsers()
                     rsp.ParseFromString(task.data)
                     for row in rsp.rows:
                         uid_list.update(set(row.uids))
@@ -127,7 +127,7 @@ class Forwarder(object):
                     proc_id_list = self.user_redis.mget(key_list)
                     proc_id_to_uid_dict = dict(zip(uid_list, proc_id_list))
 
-                    proc_id_to_rsp_dict = defaultdict(gw_pb2.RspToUsers)
+                    proc_id_to_rsp_dict = defaultdict(shine_pb2.RspToUsers)
 
                     for row in rsp.rows:
                         proc_id_to_row_dict = dict()
@@ -138,7 +138,7 @@ class Forwarder(object):
                                 continue
 
                             if proc_id not in proc_id_to_row_dict:
-                                new_row = gw_pb2.RspToUsers.Row()
+                                new_row = shine_pb2.RspToUsers.Row()
                                 new_row.userdata = row.userdata
                                 new_row.buf = row.buf
                                 proc_id_to_row_dict[proc_id] = new_row
@@ -153,7 +153,7 @@ class Forwarder(object):
 
                     # 消息已经搞定了，现在就是发送了
                     for proc_id, rsp in proc_id_to_rsp_dict.items():
-                        rsp_task = gw_pb2.Task()
+                        rsp_task = shine_pb2.Task()
                         rsp_task.cmd = task.cmd
                         rsp_task.proc_id = proc_id
                         rsp_task.data = rsp.SerializeToString()
@@ -164,7 +164,7 @@ class Forwarder(object):
                     # 直接转发就好
                     self.to_send_queue.put((task.proc_id, data))
                 else:
-                    rsp = gw_pb2.CloseUsers()
+                    rsp = shine_pb2.CloseUsers()
                     rsp.ParseFromString(task.data)
 
                     uid_list = list(rsp.uids)
@@ -174,7 +174,7 @@ class Forwarder(object):
                     proc_id_list = self.user_redis.mget(key_list)
                     proc_id_to_uid_dict = dict(zip(uid_list, proc_id_list))
 
-                    proc_id_to_rsp_dict = defaultdict(gw_pb2.CloseUsers)
+                    proc_id_to_rsp_dict = defaultdict(shine_pb2.CloseUsers)
 
                     for uid in uid_list:
                         proc_id = proc_id_to_uid_dict.get(uid)
@@ -182,7 +182,7 @@ class Forwarder(object):
                             continue
 
                         if proc_id not in proc_id_to_rsp_dict:
-                            new_rsp = gw_pb2.CloseUsers()
+                            new_rsp = shine_pb2.CloseUsers()
                             new_rsp.userdata = rsp.userdata
                             proc_id_to_rsp_dict[proc_id] = new_rsp
                         else:
@@ -192,7 +192,7 @@ class Forwarder(object):
 
                     # 消息已经搞定了，现在就是发送了
                     for proc_id, rsp in proc_id_to_rsp_dict.items():
-                        rsp_task = gw_pb2.Task()
+                        rsp_task = shine_pb2.Task()
                         rsp_task.cmd = task.cmd
                         rsp_task.proc_id = proc_id
                         rsp_task.data = rsp.SerializeToString()
@@ -216,7 +216,7 @@ class Forwarder(object):
         """
         while 1:
             topic, data = self.to_send_queue.get()
-            if isinstance(data, gw_pb2.Task):
+            if isinstance(data, shine_pb2.Task):
                 data = data.SerializeToString()
 
             self.output_server.send_multipart(

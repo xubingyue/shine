@@ -14,7 +14,7 @@ import zmq.green as zmq  # for gevent
 from .server import Server
 from ..share.proc_mgr import ProcMgr
 from ..share.log import logger
-from ..share import constants, gw_pb2
+from ..share import constants, shine_pb2
 from ..share.config import ConfigAttribute, Config
 
 
@@ -144,7 +144,7 @@ class Gateway(object):
         while True:
             topic, msg = self.forwarder_client.recv_multipart()
 
-            task = gw_pb2.Task()
+            task = shine_pb2.Task()
             task.ParseFromString(msg)
 
             logger.debug('task:\n%s', task)
@@ -204,7 +204,7 @@ class Gateway(object):
                     conn.uid = conn.userdata = None
 
         elif task.cmd == constants.CMD_WRITE_TO_USERS:
-            rsp = gw_pb2.RspToUsers()
+            rsp = shine_pb2.RspToUsers()
             rsp.ParseFromString(task.data)
 
             for row in rsp.rows:
@@ -214,7 +214,7 @@ class Gateway(object):
                         conn.write(row.buf)
 
         elif task.cmd == constants.CMD_CLOSE_USERS:
-            rsp = gw_pb2.CloseUsers()
+            rsp = shine_pb2.CloseUsers()
             rsp.ParseFromString(task.data)
 
             for uid in rsp.uids:
@@ -244,7 +244,7 @@ class Gateway(object):
             logger.debug('conn.id: %r', conn.id)
             self.conn_dict[conn.id] = conn
 
-            task = gw_pb2.Task()
+            task = shine_pb2.Task()
             task.proc_id = self.proc_id
             task.client_id = conn.id
             task.client_ip = conn.address[0]
@@ -264,7 +264,7 @@ class Gateway(object):
                 self.user_dict.pop(conn.uid, None)
                 conn.uid = conn.userdata = None
 
-            task = gw_pb2.Task()
+            task = shine_pb2.Task()
             task.proc_id = self.proc_id
             task.client_id = conn.id
             task.client_ip = conn.address[0]
@@ -276,7 +276,7 @@ class Gateway(object):
         def handle_request(conn, data):
             # 转发到worker
             logger.debug('conn.id: %r, data: %r', conn.id, data)
-            task = gw_pb2.Task()
+            task = shine_pb2.Task()
             task.proc_id = self.proc_id
             task.client_id = conn.id
             task.client_ip = conn.address[0]

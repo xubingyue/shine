@@ -2,7 +2,7 @@
 
 from ..share.log import logger
 from ..share import constants
-from ..share.gw_pb2 import RspToUsers, CloseUsers, Task
+from ..share.shine_pb2 import RspToUsers, CloseUsers, Task
 
 
 class Request(object):

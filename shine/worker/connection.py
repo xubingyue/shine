@@ -5,7 +5,7 @@ import socket
 import thread
 import time
 import zmq
-from ..share import constants, gw_pb2
+from ..share import constants, shine_pb2
 from ..share.log import logger
 
 
@@ -105,7 +105,7 @@ class Connection(object):
         """
         数据获取结束
         """
-        task = gw_pb2.Task()
+        task = shine_pb2.Task()
         task.ParseFromString(data)
 
         logger.debug('task:\n%s', task)
