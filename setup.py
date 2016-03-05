@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="shine",
-    version='0.1.10',
+    version='0.1.11',
     zip_safe=False,
     platforms='any',
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
