@@ -20,6 +20,13 @@ def close_client(request):
     logger.debug(request)
 
 
+@app.route(1)
+def reg(request):
+    request.write_to_client(dict(
+        ret=0,
+    ))
+
+
 @app.route(2)
 def login(request):
 

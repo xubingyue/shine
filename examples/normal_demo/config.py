@@ -45,4 +45,4 @@ handler.setFormatter(colorlog.ColoredFormatter(COLOR_LOG_FORMAT, log_colors={
 }))
 logger = logging.getLogger('shine')
 logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
