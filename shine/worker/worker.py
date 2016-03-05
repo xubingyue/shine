@@ -86,13 +86,13 @@ class Worker(RoutesMixin, AppEventsMixin):
                         self.debug, self.spawn_count)
 
             # 设置进程名
-            setproctitle.setproctitle(self._make_proc_name('app:master'))
+            setproctitle.setproctitle(self._make_proc_name('worker:master'))
             # 只能在主线程里面设置signals
             self._handle_parent_proc_signals()
             self._spawn_workers(self.spawn_count)
         else:
             # 子进程
-            setproctitle.setproctitle(self._make_proc_name('app:app'))
+            setproctitle.setproctitle(self._make_proc_name('worker:app'))
             self._worker_run()
 
     def _make_proc_name(self, subtitle):
