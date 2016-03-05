@@ -9,7 +9,7 @@ setup(
     platforms='any',
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     scripts=['shine/bin/shined.py'],
-    install_requires=[],
+    install_requires=['events', 'zmq', 'netkit', 'click', 'setproctitle'],
     url="https://github.com/dantezhu/shine",
     license="MIT",
     author="dantezhu",
