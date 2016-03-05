@@ -109,9 +109,9 @@ class Request(object):
             data = self.box.map(data).pack()
 
         task = Task()
-        # 就可以直接通过proc_id和client_id来进行识别了
+        # 就可以直接通过node_id和client_id来进行识别了
         task.client_id = self.task.client_id
-        task.proc_id = self.task.proc_id
+        task.node_id = self.task.node_id
         task.cmd = constants.CMD_WRITE_TO_CLIENT
         task.data = data
 
@@ -126,7 +126,7 @@ class Request(object):
     def close_client(self):
         task = Task()
         task.client_id = self.task.client_id
-        task.proc_id = self.task.proc_id
+        task.node_id = self.task.node_id
         task.cmd = constants.CMD_CLOSE_CLIENT
 
         return self.conn.write(task.SerializeToString())
@@ -135,7 +135,7 @@ class Request(object):
 
         task = Task()
         task.client_id = self.task.client_id
-        task.proc_id = self.task.proc_id
+        task.node_id = self.task.node_id
         task.cmd = constants.CMD_LOGIN_CLIENT
         task.uid = uid
         task.userdata = userdata or 0
@@ -145,7 +145,7 @@ class Request(object):
     def logout_client(self):
         task = Task()
         task.client_id = self.task.client_id
-        task.proc_id = self.task.proc_id
+        task.node_id = self.task.node_id
         task.cmd = constants.CMD_LOGOUT_CLIENT
 
         return self.conn.write(task.SerializeToString())
@@ -168,7 +168,7 @@ class Request(object):
         透传到worker进行处理
         """
 
-        return self.trigger.write_to_worker(data, proc_id=self.task.proc_id)
+        return self.trigger.write_to_worker(data, node_id=self.task.node_id)
 
     def interrupt(self, data=None):
         """

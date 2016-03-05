@@ -10,41 +10,41 @@ class ShareStore(object):
 
     rds = None
     user_key_prefix = None
-    procs_key = None
+    nodes_key = None
     user_maxage = None
 
-    def __init__(self, rds, user_key_prefix, procs_key, user_maxage=None):
+    def __init__(self, rds, user_key_prefix, nodes_key, user_maxage=None):
         """
         :param rds: redis实例
         :param user_key_prefix: 用户数据的key前缀
-        :param procs_key: 进程集合的key
+        :param nodes_key: 进程集合的key
         :return:
         """
 
         self.rds = rds
         self.user_key_prefix = user_key_prefix
-        self.procs_key = procs_key
+        self.nodes_key = nodes_key
         self.user_maxage = user_maxage
 
-    def add_user(self, uid, proc_id):
+    def add_user(self, uid, node_id):
         """
         添加用户
         :param uid:
-        :param proc_id:
+        :param node_id:
         :return:
         """
-        return self.rds.set(self._make_redis_key(uid), proc_id, ex=self.user_maxage)
+        return self.rds.set(self._make_redis_key(uid), node_id, ex=self.user_maxage)
 
-    def remove_user(self, uid, proc_id):
+    def remove_user(self, uid, node_id):
         """
-        删除用户，要保证proc_id相等
+        删除用户，要保证node_id相等
         :param uid:
         :return:
         """
 
-        old_proc_id = self.rds.get(self._make_redis_key(uid))
+        old_node_id = self.rds.get(self._make_redis_key(uid))
 
-        if old_proc_id is None:
+        if old_node_id is None:
             # 没数据当然直接返回啦
             return
 
@@ -59,32 +59,32 @@ class ShareStore(object):
         :param uid_list:
         :return:
         """
-        proc_id_list = self.rds.mget([self._make_redis_key(uid) for uid in uid_list])
+        node_id_list = self.rds.mget([self._make_redis_key(uid) for uid in uid_list])
 
-        return dict(zip(uid_list, proc_id_list))
+        return dict(zip(uid_list, node_id_list))
 
-    def add_proc(self, proc_id):
+    def add_proc(self, node_id):
         """
-        添加proc_id
+        添加node_id
         :return:
         """
 
-        return self.rds.sadd(self.procs_key, proc_id)
+        return self.rds.sadd(self.nodes_key, node_id)
 
-    def remove_proc(self, proc_id):
+    def remove_proc(self, node_id):
         """
-        删除proc_id
+        删除node_id
         :return:
         """
 
-        return self.rds.srem(self.procs_key, proc_id)
+        return self.rds.srem(self.nodes_key, node_id)
 
-    def get_procs(self):
+    def get_nodes(self):
         """
         获取proc集合
         :return:
         """
-        return self.rds.smembers(self.procs_key)
+        return self.rds.smembers(self.nodes_key)
 
     def _make_redis_key(self, uid):
         return self.user_key_prefix + str(uid)

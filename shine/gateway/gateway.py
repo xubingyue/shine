@@ -41,7 +41,7 @@ class Gateway(object):
     task_queue = None
 
     # worker唯一标示
-    proc_id = None
+    node_id = None
     # 连接ID->conn
     conn_dict = None
     # 用户ID->conn
@@ -73,7 +73,7 @@ class Gateway(object):
             rds = redis.from_url(self.config['REDIS_URL'])
             self.share_store = ShareStore(rds,
                                           self.config['REDIS_USER_KEY_PREFIX'],
-                                          self.config['REDIS_PROCS_KEY'],
+                                          self.config['REDIS_NODES_KEY'],
                                           self.config['REDIS_USER_MAXAGE'],
                                           )
 
@@ -148,7 +148,7 @@ class Gateway(object):
         self.forwarder_client = ctx.socket(zmq.SUB)
         for address in self.config['FORWARDER_OUTPUT_ADDRESS_LIST']:
             self.forwarder_client.connect(address)
-        self.forwarder_client.setsockopt(zmq.SUBSCRIBE, self.proc_id)
+        self.forwarder_client.setsockopt(zmq.SUBSCRIBE, self.node_id)
 
         while True:
             topic, msg = self.forwarder_client.recv_multipart()
@@ -190,7 +190,7 @@ class Gateway(object):
 
                     # 先从存储删掉
                     if self.share_store:
-                        self.share_store.remove_user(conn.uid, self.proc_id)
+                        self.share_store.remove_user(conn.uid, self.node_id)
 
                     self.user_dict.pop(conn.uid, None)
                     conn.uid = conn.userdata = 0
@@ -201,7 +201,7 @@ class Gateway(object):
 
                 # 后写入存储
                 if self.share_store:
-                    self.share_store.add_user(conn.uid, self.proc_id)
+                    self.share_store.add_user(conn.uid, self.node_id)
 
         elif task.cmd == constants.CMD_LOGOUT_CLIENT:
             conn = self.conn_dict.get(task.client_id)
@@ -283,7 +283,7 @@ class Gateway(object):
             self.conn_dict[conn.id] = conn
 
             task = shine_pb2.Task()
-            task.proc_id = self.proc_id
+            task.node_id = self.node_id
             task.client_id = conn.id
             task.client_ip = conn.address[0]
             task.cmd = constants.CMD_CLIENT_CREATED
@@ -297,13 +297,13 @@ class Gateway(object):
             self.conn_dict.pop(conn.id, None)
             if conn.uid is not None:
                 if self.share_store:
-                    self.share_store.remove_user(conn.uid, self.proc_id)
+                    self.share_store.remove_user(conn.uid, self.node_id)
 
                 self.user_dict.pop(conn.uid, None)
                 conn.uid = conn.userdata = 0
 
             task = shine_pb2.Task()
-            task.proc_id = self.proc_id
+            task.node_id = self.node_id
             task.client_id = conn.id
             task.client_ip = conn.address[0]
             task.cmd = constants.CMD_CLIENT_CLOSED
@@ -315,7 +315,7 @@ class Gateway(object):
             # 转发到worker
             logger.debug('conn.id: %r, data: %r', conn.id, data)
             task = shine_pb2.Task()
-            task.proc_id = self.proc_id
+            task.node_id = self.node_id
             task.client_id = conn.id
             task.client_ip = conn.address[0]
             task.cmd = constants.CMD_CLIENT_REQ
@@ -328,9 +328,9 @@ class Gateway(object):
         :return:
         """
         setproctitle.setproctitle(self._make_proc_name('gateway:app:%s' % index))
-        self.proc_id = uuid.uuid4().bytes
+        self.node_id = uuid.uuid4().bytes
         if self.share_store:
-            self.share_store.add_proc(self.proc_id)
+            self.share_store.add_proc(self.node_id)
         self._handle_child_proc_signals()
         self._register_outer_server_handlers()
         self._start_inner_server(self.config['GATEWAY_INNER_ADDRESS_LIST'][index])
@@ -339,7 +339,7 @@ class Gateway(object):
             self._serve_forever()
         except KeyboardInterrupt:
             if self.share_store:
-                self.share_store.remove_proc(self.proc_id)
+                self.share_store.remove_proc(self.node_id)
             pass
         except:
             logger.error('exc occur.', exc_info=True)

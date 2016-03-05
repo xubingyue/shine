@@ -66,11 +66,11 @@ DEFAULT_CONFIG = {
     'WORKER_STOP_TIMEOUT': None,  # 停止进程超时
 
     # gateway, forwarder 需要
-    'REDIS_URL': None,  # 用来存储用户ID->proc_id的映射 以及 proc_id的集合
+    'REDIS_URL': None,  # 用来存储用户ID->node_id的映射 以及 node_id的集合
     # gateway, forwarder 需要
     'REDIS_USER_KEY_PREFIX': NAME + ':user:',  # 存储的user键前缀
     # gateway 需要
     'REDIS_USER_MAXAGE': None,  # user最长存储的秒数，因为有可能有些用户的数据没有正常清空
     # gateway, forwarder 需要
-    'REDIS_PROCS_KEY': NAME + ':procs',  # 存储proc_id的集合
+    'REDIS_NODES_KEY': NAME + ':nodes',  # 存储node_id的集合
 }

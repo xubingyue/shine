@@ -56,7 +56,7 @@ class Forwarder(object):
             rds = redis.from_url(self.config['REDIS_URL'])
             self.share_store = ShareStore(rds,
                                           self.config['REDIS_USER_KEY_PREFIX'],
-                                          self.config['REDIS_PROCS_KEY'],
+                                          self.config['REDIS_NODES_KEY'],
                                           self.config['REDIS_USER_MAXAGE'],
                                           )
 
@@ -115,13 +115,13 @@ class Forwarder(object):
                             constants.CMD_WRITE_TO_WORKER):
                 # 原样处理过去
                 # 给data的好处是，就不用再序列化了
-                self.to_send_queue.put((task.proc_id, data))
+                self.to_send_queue.put((task.node_id, data))
             elif task.cmd == constants.CMD_WRITE_TO_USERS:
                 if not self.share_store:
                     # 直接转发就好
-                    self.to_send_queue.put((task.proc_id, data))
+                    self.to_send_queue.put((task.node_id, data))
                 else:
-                    # 这个是所有row合并在一起的uid_list，是为了快速获取proc_id而用的
+                    # 这个是所有row合并在一起的uid_list，是为了快速获取node_id而用的
                     merged_uid_list = set()
                     rsp = shine_pb2.RspToUsers()
                     rsp.ParseFromString(task.data)
@@ -130,57 +130,57 @@ class Forwarder(object):
 
                     merged_uid_list = list(merged_uid_list)  # 一定要变回来
 
-                    proc_id_to_uid_dict = self.share_store.get_users(merged_uid_list)
+                    node_id_to_uid_dict = self.share_store.get_users(merged_uid_list)
 
-                    proc_id_to_rsp_dict = defaultdict(shine_pb2.RspToUsers)
+                    node_id_to_rsp_dict = defaultdict(shine_pb2.RspToUsers)
 
                     for row in rsp.rows:
-                        proc_id_to_row_dict = dict()
+                        node_id_to_row_dict = dict()
 
                         uid_list = row.uids
                         if set((-1, -2, -3)) & set(uid_list):
                             # 给所有的topic都发一遍就好
-                            proc_id_list = self.share_store.get_procs()
-                            for proc_id in proc_id_list:
+                            node_id_list = self.share_store.get_nodes()
+                            for node_id in node_id_list:
                                 # 所有proc都要收到这个消息并进行处理
-                                proc_id_to_rsp_dict[proc_id].rows.extend([row])
+                                node_id_to_rsp_dict[node_id].rows.extend([row])
 
                             # 直接跳到下一个row
                             continue
 
                         for uid in uid_list:
-                            proc_id = proc_id_to_uid_dict.get(uid)
-                            if proc_id is None:
+                            node_id = node_id_to_uid_dict.get(uid)
+                            if node_id is None:
                                 continue
 
-                            if proc_id not in proc_id_to_row_dict:
+                            if node_id not in node_id_to_row_dict:
                                 new_row = shine_pb2.RspToUsers.Row()
                                 new_row.userdata = row.userdata
                                 new_row.buf = row.buf
-                                proc_id_to_row_dict[proc_id] = new_row
+                                node_id_to_row_dict[node_id] = new_row
                             else:
-                                new_row = proc_id_to_row_dict[proc_id]
+                                new_row = node_id_to_row_dict[node_id]
 
                             new_row.uids.append(uid)
 
-                        for proc_id, new_row in proc_id_to_row_dict.items():
+                        for node_id, new_row in node_id_to_row_dict.items():
                             # 得用extend才行
-                            proc_id_to_rsp_dict[proc_id].rows.extend([new_row])
+                            node_id_to_rsp_dict[node_id].rows.extend([new_row])
 
                     # 消息已经搞定了，现在就是发送了
-                    for proc_id, rsp in proc_id_to_rsp_dict.items():
+                    for node_id, rsp in node_id_to_rsp_dict.items():
                         rsp_task = shine_pb2.Task()
                         rsp_task.cmd = task.cmd
-                        rsp_task.proc_id = proc_id
+                        rsp_task.node_id = node_id
                         rsp_task.data = rsp.SerializeToString()
 
-                        self.to_send_queue.put((proc_id, rsp_task))
+                        self.to_send_queue.put((node_id, rsp_task))
             elif task.cmd == constants.CMD_CLOSE_USERS:
                 if not self.share_store:
                     # 直接转发就好
-                    self.to_send_queue.put((task.proc_id, data))
+                    self.to_send_queue.put((task.node_id, data))
                 else:
-                    proc_id_to_rsp_dict = defaultdict(shine_pb2.CloseUsers)
+                    node_id_to_rsp_dict = defaultdict(shine_pb2.CloseUsers)
 
                     rsp = shine_pb2.CloseUsers()
                     rsp.ParseFromString(task.data)
@@ -189,35 +189,35 @@ class Forwarder(object):
 
                     if set((-1, -2, -3)) & set(merged_uid_list):
                         # 给所有的topic都发一遍就好
-                        proc_id_list = self.share_store.get_procs()
-                        for proc_id in proc_id_list:
+                        node_id_list = self.share_store.get_nodes()
+                        for node_id in node_id_list:
                             # 所有proc都要收到这个消息并进行处理
-                            proc_id_to_rsp_dict[proc_id] = rsp
+                            node_id_to_rsp_dict[node_id] = rsp
                     else:
-                        proc_id_to_uid_dict = self.share_store.get_users(merged_uid_list)
+                        node_id_to_uid_dict = self.share_store.get_users(merged_uid_list)
 
                         for uid in merged_uid_list:
-                            proc_id = proc_id_to_uid_dict.get(uid)
-                            if proc_id is None:
+                            node_id = node_id_to_uid_dict.get(uid)
+                            if node_id is None:
                                 continue
 
-                            if proc_id not in proc_id_to_rsp_dict:
+                            if node_id not in node_id_to_rsp_dict:
                                 new_rsp = shine_pb2.CloseUsers()
                                 new_rsp.userdata = rsp.userdata
-                                proc_id_to_rsp_dict[proc_id] = new_rsp
+                                node_id_to_rsp_dict[node_id] = new_rsp
                             else:
-                                new_rsp = proc_id_to_rsp_dict[proc_id]
+                                new_rsp = node_id_to_rsp_dict[node_id]
 
                             new_rsp.uids.append(uid)
 
                     # 消息已经搞定了，现在就是发送了
-                    for proc_id, rsp in proc_id_to_rsp_dict.items():
+                    for node_id, rsp in node_id_to_rsp_dict.items():
                         rsp_task = shine_pb2.Task()
                         rsp_task.cmd = task.cmd
-                        rsp_task.proc_id = proc_id
+                        rsp_task.node_id = node_id
                         rsp_task.data = rsp.SerializeToString()
 
-                        self.to_send_queue.put((proc_id, rsp_task))
+                        self.to_send_queue.put((node_id, rsp_task))
 
     def _handle_input_forever(self):
         """
