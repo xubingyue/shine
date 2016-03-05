@@ -53,6 +53,18 @@ DEFAULT_CONFIG = {
     # gateway, forwarder 需要
     'FORWARDER_OUTPUT_ADDRESS_LIST': None,
 
+    # worker 需要
+    'WORKER_SPAWN_COUNT': 1,  # 启动多少worker
+
+    # worker 需要
+    'WORKER_RSP_ONCE': True,  # worker只能回应一次
+
+    # worker 需要
+    'WORKER_WORK_TIMEOUT': None,  # 处理超时
+
+    # worker 需要
+    'WORKER_STOP_TIMEOUT': None,  # 停止进程超时
+
     # gateway, forwarder 需要
     'REDIS_URL': None,  # 用来存储用户ID->proc_id的映射 以及 proc_id的集合
     # gateway, forwarder 需要

@@ -31,12 +31,15 @@ class Worker(RoutesMixin, AppEventsMixin):
     # 调试模式
     debug = ConfigAttribute('DEBUG')
 
+    # 启动多少个子进程
+    spawn_count = ConfigAttribute('WORKER_SPAWN_COUNT')
+
     # 最多回应一次
-    rsp_once = True
+    rsp_once = ConfigAttribute('WORKER_RSP_ONCE')
     # 处理task超时(秒). 超过后worker会自杀. None 代表永不超时
-    work_timeout = None
+    work_timeout = ConfigAttribute('WORKER_WORK_TIMEOUT')
     # 停止子进程超时(秒). 使用 TERM 进行停止时，如果超时未停止会发送KILL信号
-    stop_timeout = None
+    stop_timeout = ConfigAttribute('WORKER_STOP_TIMEOUT')
 
     ############################## configurable end   ##############################
     # connection 类
@@ -66,11 +69,10 @@ class Worker(RoutesMixin, AppEventsMixin):
     def register_blueprint(self, blueprint):
         blueprint.register_to_app(self)
 
-    def run(self, debug=None, workers=None):
+    def run(self, debug=None):
         """
 
         :param debug:
-        :param workers:
         :return:
         """
         self._validate_cmds()
@@ -78,18 +80,16 @@ class Worker(RoutesMixin, AppEventsMixin):
         if debug is not None:
             self.debug = debug
 
-        workers = workers if workers is not None else 1
-
         if os.getenv(constants.WORKER_ENV_KEY) != 'true':
             # 主进程
             logger.info('Connect to server , debug: %s, workers: %s',
-                        self.debug, workers)
+                        self.debug, self.spawn_count)
 
             # 设置进程名
             setproctitle.setproctitle(self._make_proc_name('app:master'))
             # 只能在主线程里面设置signals
             self._handle_parent_proc_signals()
-            self._spawn_workers(workers)
+            self._spawn_workers(self.spawn_count)
         else:
             # 子进程
             setproctitle.setproctitle(self._make_proc_name('app:app'))
