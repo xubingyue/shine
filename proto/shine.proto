@@ -1,0 +1,31 @@
+package shine.gw_proto;
+
+option java_package="cn.vimer.shine.gw_proto";
+option java_outer_classname="GWProto";
+
+// 封装的Task
+message Task {
+    optional bytes proc_id = 1;                     // 进程ID
+    optional bytes client_id = 2;                   // 连接ID
+    optional string client_ip = 3;                  // 客户端IP
+    optional string inner = 4;                      // 是否是内部消息
+    optional int32 cmd = 5;                         // 命令字
+    optional bytes data = 6;                        // 数据
+    optional int64 uid = 7[default=0];              // 用户ID
+    optional int64 userdata = 8[default=0];         // 用户数据
+}
+
+message RspToUsers {
+    message Row {
+        repeated int64 uids = 1;   // 发送用户列表
+        optional bytes buf = 2;
+        optional int64 userdata = 3; // 过滤userdata
+    }
+
+    repeated Row rows = 1;
+}
+
+message CloseUsers {
+    repeated int64 uids = 1;
+    optional int64 userdata = 2; // 过滤userdata
+}
