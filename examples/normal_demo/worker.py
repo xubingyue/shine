@@ -4,12 +4,11 @@
 import sys
 sys.path.insert(0, '../../')
 
-from netkit.box import Box
 from shine import Worker, logger
 import config
 
 
-app = Worker(Box)
+app = Worker()
 app.config.from_object(config)
 
 
