@@ -35,6 +35,9 @@ DEFAULT_CONFIG = {
     # gateway, worker, forwarder 需要
     'DEBUG': False,
 
+    # box class
+    'BOX_CLASS': 'netkit.box.Box',
+
     # gateway 需要
     'GATEWAY_OUTER_HOST': None,
     # gateway 需要
