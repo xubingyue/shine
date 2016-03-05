@@ -5,11 +5,9 @@ import sys
 sys.path.insert(0, '../../')
 
 from shine import Worker, logger
-import config
 
 
 app = Worker()
-app.config.from_object(config)
 
 
 @app.create_client
@@ -54,6 +52,3 @@ def close_users(request):
         ret=100,
         body='ok'
     ))
-
-if __name__ == '__main__':
-    app.run()
