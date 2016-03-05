@@ -17,11 +17,14 @@ from ..share.log import logger
 from ..share import constants, shine_pb2
 from ..share.config import ConfigAttribute, Config
 from ..share.share_store import ShareStore
+from ..share.utils import import_module_or_string
 
 
 class Gateway(object):
     ############################## configurable begin ##############################
 
+    box_class = ConfigAttribute('BOX_CLASS',
+                                get_converter=import_module_or_string)
     name = ConfigAttribute('NAME')
     debug = ConfigAttribute('DEBUG')
 
@@ -47,10 +50,10 @@ class Gateway(object):
     # 共享存储
     share_store = None
 
-    def __init__(self, box_class):
+    def __init__(self):
         self.config = Config(defaults=constants.DEFAULT_CONFIG)
         self.proc_mgr = ProcMgr()
-        self.outer_server = Server(box_class, self.config['GATEWAY_BACKLOG'])
+        self.outer_server = Server(self.box_class, self.config['GATEWAY_BACKLOG'])
         self.task_queue = Queue()
         self.conn_dict = dict()
         self.user_dict = weakref.WeakValueDictionary()

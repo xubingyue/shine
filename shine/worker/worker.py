@@ -16,6 +16,7 @@ from .mixins import RoutesMixin, AppEventsMixin
 from ..share.log import logger
 from ..share import constants
 from ..share.config import ConfigAttribute, Config
+from ..share.utils import import_module_or_string
 
 
 class Worker(RoutesMixin, AppEventsMixin):
@@ -24,11 +25,8 @@ class Worker(RoutesMixin, AppEventsMixin):
     # 显示的进程名
     name = ConfigAttribute('NAME')
     # 消息协议类
-    box_class = None
-    # connection 类
-    connection_class = Connection
-    # request 类
-    request_class = Request
+    box_class = ConfigAttribute('BOX_CLASS',
+                                get_converter=import_module_or_string)
 
     # 调试模式
     debug = ConfigAttribute('DEBUG')
@@ -41,6 +39,10 @@ class Worker(RoutesMixin, AppEventsMixin):
     stop_timeout = None
 
     ############################## configurable end   ##############################
+    # connection 类
+    connection_class = Connection
+    # request 类
+    request_class = Request
 
     config = None
 
@@ -54,13 +56,12 @@ class Worker(RoutesMixin, AppEventsMixin):
     # 连接到forwarder的连接
     forwarder_client = None
 
-    def __init__(self, box_class):
+    def __init__(self):
         RoutesMixin.__init__(self)
         AppEventsMixin.__init__(self)
         self.config = Config(defaults=constants.DEFAULT_CONFIG)
         self.blueprints = list()
         self.processes = list()
-        self.box_class = box_class
 
     def register_blueprint(self, blueprint):
         blueprint.register_to_app(self)
