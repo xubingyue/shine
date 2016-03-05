@@ -63,7 +63,7 @@ class ShareStore(object):
 
         return dict(zip(uid_list, node_id_list))
 
-    def add_proc(self, node_id):
+    def add_node(self, node_id):
         """
         添加node_id
         :return:
@@ -71,7 +71,7 @@ class ShareStore(object):
 
         return self.rds.sadd(self.nodes_key, node_id)
 
-    def remove_proc(self, node_id):
+    def remove_node(self, node_id):
         """
         删除node_id
         :return:

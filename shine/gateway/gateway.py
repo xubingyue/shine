@@ -330,7 +330,7 @@ class Gateway(object):
         setproctitle.setproctitle(self._make_proc_name('gateway:app:%s' % index))
         self.node_id = uuid.uuid4().bytes
         if self.share_store:
-            self.share_store.add_proc(self.node_id)
+            self.share_store.add_node(self.node_id)
         self._handle_child_proc_signals()
         self._register_outer_server_handlers()
         self._start_inner_server(self.config['GATEWAY_INNER_ADDRESS_LIST'][index])
@@ -339,7 +339,7 @@ class Gateway(object):
             self._serve_forever()
         except KeyboardInterrupt:
             if self.share_store:
-                self.share_store.remove_proc(self.node_id)
+                self.share_store.remove_node(self.node_id)
             pass
         except:
             logger.error('exc occur.', exc_info=True)
