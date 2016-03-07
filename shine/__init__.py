@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = '0.1.15'
+__version__ = '0.1.16'
 
 from gateway.gateway import Gateway
 from forwarder.forwarder import Forwarder
