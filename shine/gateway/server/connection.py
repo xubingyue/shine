@@ -68,7 +68,7 @@ class Connection(object):
     def _read_message(self):
         box = self.app.box_class()
         data = self.stream.read_with_checker(box.unpack)
-        box.raw_data = data
+        box.__raw_data = data
         if data:
             self._on_read_complete(box)
 

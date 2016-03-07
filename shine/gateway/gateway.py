@@ -320,7 +320,7 @@ class Gateway(object):
             task.client_ip = conn.address[0]
             task.cmd = constants.CMD_CLIENT_REQ
             # 原始数据
-            task.body = box.raw_data
+            task.body = box.__raw_data
             self.task_queue.put(task)
 
     def _worker_run(self, index):
