@@ -58,7 +58,7 @@ class Trigger(object):
 
         task = Task()
         task.cmd = constants.CMD_WRITE_TO_USERS
-        task.data = msg.SerializeToString()
+        task.body = msg.SerializeToString()
 
         return self.zmq_client.send(task.SerializeToString())
 
@@ -69,7 +69,7 @@ class Trigger(object):
 
         task = Task()
         task.cmd = constants.CMD_CLOSE_USERS
-        task.data = msg.SerializeToString()
+        task.body = msg.SerializeToString()
 
         return self.zmq_client.send(task.SerializeToString())
 
@@ -89,6 +89,6 @@ class Trigger(object):
         elif isinstance(data, dict):
             data = self.box_class(data).pack()
 
-        task.data = data
+        task.body = data
 
         return self.zmq_client.send(task.SerializeToString())

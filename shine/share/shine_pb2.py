@@ -13,7 +13,7 @@ from google.protobuf import descriptor_pb2
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='shine.proto',
   package='shine.gw_proto',
-  serialized_pb='\n\x0bshine.proto\x12\x0eshine.gw_proto\"\x8c\x01\n\x04Task\x12\x0f\n\x07node_id\x18\x01 \x01(\x0c\x12\x11\n\tclient_id\x18\x02 \x01(\x0c\x12\x11\n\tclient_ip\x18\x03 \x01(\t\x12\r\n\x05inner\x18\x04 \x01(\t\x12\x0b\n\x03\x63md\x18\x05 \x01(\x05\x12\x0c\n\x04\x64\x61ta\x18\x06 \x01(\x0c\x12\x0e\n\x03uid\x18\x07 \x01(\x03:\x01\x30\x12\x13\n\x08userdata\x18\x08 \x01(\x03:\x01\x30\"n\n\nRspToUsers\x12,\n\x04rows\x18\x01 \x03(\x0b\x32\x1e.shine.gw_proto.RspToUsers.Row\x1a\x32\n\x03Row\x12\x0c\n\x04uids\x18\x01 \x03(\x03\x12\x0b\n\x03\x62uf\x18\x02 \x01(\x0c\x12\x10\n\x08userdata\x18\x03 \x01(\x03\",\n\nCloseUsers\x12\x0c\n\x04uids\x18\x01 \x03(\x03\x12\x10\n\x08userdata\x18\x02 \x01(\x03\x42\"\n\x17\x63n.vimer.shine.gw_protoB\x07GWProto')
+  serialized_pb='\n\x0bshine.proto\x12\x0eshine.gw_proto\"\x8c\x01\n\x04Task\x12\x0f\n\x07node_id\x18\x01 \x01(\x0c\x12\x11\n\tclient_id\x18\x02 \x01(\x0c\x12\x11\n\tclient_ip\x18\x03 \x01(\t\x12\r\n\x05inner\x18\x04 \x01(\t\x12\x0b\n\x03\x63md\x18\x05 \x01(\x05\x12\x0e\n\x03uid\x18\x06 \x01(\x03:\x01\x30\x12\x13\n\x08userdata\x18\x07 \x01(\x03:\x01\x30\x12\x0c\n\x04\x62ody\x18\x08 \x01(\x0c\"n\n\nRspToUsers\x12,\n\x04rows\x18\x01 \x03(\x0b\x32\x1e.shine.gw_proto.RspToUsers.Row\x1a\x32\n\x03Row\x12\x0c\n\x04uids\x18\x01 \x03(\x03\x12\x0b\n\x03\x62uf\x18\x02 \x01(\x0c\x12\x10\n\x08userdata\x18\x03 \x01(\x03\",\n\nCloseUsers\x12\x0c\n\x04uids\x18\x01 \x03(\x03\x12\x10\n\x08userdata\x18\x02 \x01(\x03\x42\"\n\x17\x63n.vimer.shine.gw_protoB\x07GWProto')
 
 
 
@@ -61,23 +61,23 @@ _TASK = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='data', full_name='shine.gw_proto.Task.data', index=5,
-      number=6, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value="",
+      name='uid', full_name='shine.gw_proto.Task.uid', index=5,
+      number=6, type=3, cpp_type=2, label=1,
+      has_default_value=True, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='uid', full_name='shine.gw_proto.Task.uid', index=6,
+      name='userdata', full_name='shine.gw_proto.Task.userdata', index=6,
       number=7, type=3, cpp_type=2, label=1,
       has_default_value=True, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='userdata', full_name='shine.gw_proto.Task.userdata', index=7,
-      number=8, type=3, cpp_type=2, label=1,
-      has_default_value=True, default_value=0,
+      name='body', full_name='shine.gw_proto.Task.body', index=7,
+      number=8, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value="",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),

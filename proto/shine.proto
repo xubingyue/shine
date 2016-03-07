@@ -10,9 +10,9 @@ message Task {
     optional string client_ip = 3;                  // 客户端IP
     optional string inner = 4;                      // 是否是内部消息
     optional int32 cmd = 5;                         // 命令字
-    optional bytes data = 6;                        // 数据
-    optional int64 uid = 7[default=0];              // 用户ID
-    optional int64 userdata = 8[default=0];         // 用户数据
+    optional int64 uid = 6[default=0];              // 用户ID
+    optional int64 userdata = 7[default=0];         // 用户数据
+    optional bytes body = 8;                        // 数据
 }
 
 message RspToUsers {

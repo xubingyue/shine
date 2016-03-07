@@ -41,7 +41,7 @@ class Request(object):
         return self.conn.app
 
     def _parse_raw_data(self):
-        if not self.task.data:
+        if not self.task.body:
             return True
 
         try:
@@ -50,7 +50,7 @@ class Request(object):
             logger.error('parse raw_data fail. e: %s, request: %s', e, self)
             return False
 
-        if self.box.unpack(self.task.data) > 0:
+        if self.box.unpack(self.task.body) > 0:
             self._parse_route_rule()
             return True
         else:
@@ -113,7 +113,7 @@ class Request(object):
         task.client_id = self.task.client_id
         task.node_id = self.task.node_id
         task.cmd = constants.CMD_WRITE_TO_CLIENT
-        task.data = data
+        task.body = data
 
         succ = self.conn.write(task.SerializeToString())
 

@@ -172,7 +172,7 @@ class Gateway(object):
         if task.cmd == constants.CMD_WRITE_TO_CLIENT:
             conn = self.conn_dict.get(task.client_id)
             if conn:
-                conn.write(task.data)
+                conn.write(task.body)
         elif task.cmd == constants.CMD_WRITE_TO_WORKER:
             # 重新转发处理
             # 标记一下
@@ -215,7 +215,7 @@ class Gateway(object):
 
         elif task.cmd == constants.CMD_WRITE_TO_USERS:
             rsp = shine_pb2.RspToUsers()
-            rsp.ParseFromString(task.data)
+            rsp.ParseFromString(task.body)
 
             for row in rsp.rows:
                 # -1: 所有已登录连接
@@ -241,7 +241,7 @@ class Gateway(object):
 
         elif task.cmd == constants.CMD_CLOSE_USERS:
             rsp = shine_pb2.CloseUsers()
-            rsp.ParseFromString(task.data)
+            rsp.ParseFromString(task.body)
 
             if -1 in rsp.uids:
                 for conn in self.conn_dict.values():
@@ -319,7 +319,7 @@ class Gateway(object):
             task.client_id = conn.id
             task.client_ip = conn.address[0]
             task.cmd = constants.CMD_CLIENT_REQ
-            task.data = data
+            task.body = data
             self.task_queue.put(task)
 
     def _worker_run(self, index):

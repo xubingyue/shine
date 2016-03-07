@@ -124,7 +124,7 @@ class Forwarder(object):
                     # 这个是所有row合并在一起的uid_list，是为了快速获取node_id而用的
                     merged_uid_list = set()
                     rsp = shine_pb2.RspToUsers()
-                    rsp.ParseFromString(task.data)
+                    rsp.ParseFromString(task.body)
                     for row in rsp.rows:
                         merged_uid_list.update(set(row.uids))
 
@@ -172,7 +172,7 @@ class Forwarder(object):
                         rsp_task = shine_pb2.Task()
                         rsp_task.cmd = task.cmd
                         rsp_task.node_id = node_id
-                        rsp_task.data = rsp.SerializeToString()
+                        rsp_task.body = rsp.SerializeToString()
 
                         self.to_send_queue.put((node_id, rsp_task))
             elif task.cmd == constants.CMD_CLOSE_USERS:
@@ -183,7 +183,7 @@ class Forwarder(object):
                     node_id_to_rsp_dict = defaultdict(shine_pb2.CloseUsers)
 
                     rsp = shine_pb2.CloseUsers()
-                    rsp.ParseFromString(task.data)
+                    rsp.ParseFromString(task.body)
 
                     merged_uid_list = list(rsp.uids)
 
@@ -215,7 +215,7 @@ class Forwarder(object):
                         rsp_task = shine_pb2.Task()
                         rsp_task.cmd = task.cmd
                         rsp_task.node_id = node_id
-                        rsp_task.data = rsp.SerializeToString()
+                        rsp_task.body = rsp.SerializeToString()
 
                         self.to_send_queue.put((node_id, rsp_task))
 
