@@ -184,13 +184,13 @@ class Gateway(object):
                 conn.close()
         elif task.cmd == constants.CMD_LOGIN_CLIENT:
             conn = self.conn_dict.get(task.client_id)
-            if conn:
+            if conn and conn.uid != task.uid:
                 if conn.uid is not None:
                     # 旧的登录用户
 
                     # 先从存储删掉
                     if self.share_store:
-                        self.share_store.remove_user(conn.uid, self.node_id)
+                        gevent.spawn(self.share_store.remove_user, conn.uid, self.node_id)
 
                     self.user_dict.pop(conn.uid, None)
                     conn.uid = conn.userdata = 0
@@ -201,14 +201,14 @@ class Gateway(object):
 
                 # 后写入存储
                 if self.share_store:
-                    self.share_store.add_user(conn.uid, self.node_id)
+                    gevent.spawn(self.share_store.add_user, conn.uid, self.node_id)
 
         elif task.cmd == constants.CMD_LOGOUT_CLIENT:
             conn = self.conn_dict.get(task.client_id)
             if conn:
                 if conn.uid is not None:
                     if self.share_store:
-                        self.share_store.remove_user(conn.uid)
+                        gevent.spawn(self.share_store.remove_user, conn.uid, self.node_id)
 
                     self.user_dict.pop(conn.uid, None)
                     conn.uid = conn.userdata = 0
@@ -297,7 +297,7 @@ class Gateway(object):
             self.conn_dict.pop(conn.id, None)
             if conn.uid is not None:
                 if self.share_store:
-                    self.share_store.remove_user(conn.uid, self.node_id)
+                    gevent.spawn(self.share_store.remove_user, conn.uid, self.node_id)
 
                 self.user_dict.pop(conn.uid, None)
                 conn.uid = conn.userdata = 0
@@ -309,6 +309,16 @@ class Gateway(object):
             task.cmd = constants.CMD_CLIENT_CLOSED
 
             self.task_queue.put(task)
+
+        @self.outer_server.handle_request
+        def renew_user(conn, box):
+            """
+            检查是否是心跳，如果是则进行续期
+            """
+            if self.share_store:
+                if conn.uid and box.cmd == self.config['GATEWAY_CLIENT_HEARTBEAT_CMD']:
+                    # 说明是心跳
+                    gevent.spawn(self.share_store.renew_user, conn.uid)
 
         @self.outer_server.handle_request
         def handle_request(conn, box):

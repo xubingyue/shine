@@ -50,6 +50,14 @@ class ShareStore(object):
 
         return self.rds.delete(self._make_redis_key(uid))
 
+    def renew_user(self, uid):
+        """
+        给用户续期，仅续期而已，如果用户已经不存在也不会生成
+        :param uid:
+        :return:
+        """
+        return self.rds.expire(self._make_redis_key(uid), self.user_maxage)
+
     def get_users(self, uid_list):
         """
         批量获取用户信息 {

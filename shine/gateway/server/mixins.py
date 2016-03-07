@@ -42,10 +42,3 @@ class AppEventsMixin(object):
         连接close之后
         f(conn)
         """
-
-    @_reg_event_handler
-    def before_request(self, box):
-        """
-        请求解析成功后
-        f(box)
-        """
