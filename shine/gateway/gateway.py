@@ -311,15 +311,16 @@ class Gateway(object):
             self.task_queue.put(task)
 
         @self.outer_server.handle_request
-        def handle_request(conn, data):
+        def handle_request(conn, box):
             # 转发到worker
-            logger.debug('conn.id: %r, data: %r', conn.id, data)
+            logger.debug('conn.id: %r, box: %s', conn.id, box)
             task = shine_pb2.Task()
             task.node_id = self.node_id
             task.client_id = conn.id
             task.client_ip = conn.address[0]
             task.cmd = constants.CMD_CLIENT_REQ
-            task.body = data
+            # 原始数据
+            task.body = box.raw_data
             self.task_queue.put(task)
 
     def _worker_run(self, index):

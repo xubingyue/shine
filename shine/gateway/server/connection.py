@@ -66,9 +66,11 @@ class Connection(object):
             job.join()
 
     def _read_message(self):
-        data = self.stream.read_with_checker(self.app.stream_checker)
+        box = self.app.box_class()
+        data = self.stream.read_with_checker(box.unpack)
+        box.raw_data = data
         if data:
-            self._on_read_complete(data)
+            self._on_read_complete(box)
 
         # 在这里加上判断，因为如果在处理函数里关闭了conn，会导致无法触发on_connction_close
         if self.stream.closed():
@@ -79,15 +81,17 @@ class Connection(object):
 
         self.app.events.close_conn(self)
 
-    def _on_read_complete(self, data):
+    def _on_read_complete(self, box):
         """
         数据获取结束
+        data: 原始数据
+        box: 解析后的box
         """
         try:
-            self.app.events.handle_request(self, data)
+            self.app.events.handle_request(self, box)
         except Exception, e:
-            logger.error('view_func raise exception. data: %s, e: %s',
-                         data, e, exc_info=True)
+            logger.error('view_func raise exception. box: %s, e: %s',
+                         box, e, exc_info=True)
 
     def __repr__(self):
         return str(self.id)
