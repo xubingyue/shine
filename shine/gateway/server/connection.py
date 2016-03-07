@@ -68,6 +68,7 @@ class Connection(object):
     def _read_message(self):
         box = self.app.box_class()
         data = self.stream.read_with_checker(box.unpack)
+        # 不能使用双下划线，会导致别的地方取的时候变为 _Gateway__raw_data，很奇怪
         box._raw_data = data
         if data:
             self._on_read_complete(box)
