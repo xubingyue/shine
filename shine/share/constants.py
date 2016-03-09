@@ -71,9 +71,11 @@ DEFAULT_CONFIG = {
     # gateway, forwarder 需要
     'REDIS_URL': None,  # 用来存储用户ID->node_id的映射 以及 node_id的集合
     # gateway, forwarder 需要
-    'REDIS_USER_KEY_PREFIX': NAME + ':user:',  # 存储的user键前缀
+    'REDIS_KEY_SHARE_PREFIX': NAME + ':',  # 存储的key的统一前缀
+    # gateway, forwarder 需要
+    'REDIS_USER_KEY_PREFIX': 'user:',  # 存储的user键前缀
     # gateway 需要
     'REDIS_USER_MAXAGE': 300,  # user最长存储的秒数，因为有可能有些用户的数据没有正常清空
     # gateway, forwarder 需要
-    'REDIS_NODES_KEY': NAME + ':nodes',  # 存储node_id的集合
+    'REDIS_NODES_KEY': 'nodes',  # 存储node_id的集合
 }

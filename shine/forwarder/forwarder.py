@@ -55,8 +55,8 @@ class Forwarder(object):
             import redis
             rds = redis.from_url(self.config['REDIS_URL'])
             self.share_store = ShareStore(rds,
-                                          self.config['REDIS_USER_KEY_PREFIX'],
-                                          self.config['REDIS_NODES_KEY'],
+                                          self.config['REDIS_KEY_SHARE_PREFIX'] + self.config['REDIS_USER_KEY_PREFIX'],
+                                          self.config['REDIS_KEY_SHARE_PREFIX'] + self.config['REDIS_NODES_KEY'],
                                           self.config['REDIS_USER_MAXAGE'],
                                           )
 
@@ -92,7 +92,7 @@ class Forwarder(object):
         return proc_name
 
     def _make_redis_key(self, uid):
-        return self.config['REDIS_USER_KEY_PREFIX'] + str(uid)
+        return self.config['REDIS_KEY_SHARE_PREFIX'] + self.config['REDIS_USER_KEY_PREFIX'] + str(uid)
 
     def _handle_task_forever(self):
         """
