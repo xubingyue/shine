@@ -286,6 +286,8 @@ class Gateway(object):
             task.node_id = self.node_id
             task.client_id = conn.id
             task.client_ip = conn.address[0]
+            task.uid = conn.uid
+            task.userdata = conn.userdata
             task.cmd = constants.CMD_CLIENT_CREATED
 
             self.task_queue.put(task)
@@ -294,6 +296,15 @@ class Gateway(object):
         def close_conn(conn):
             # 删除
             logger.debug('conn.id: %r', conn.id)
+
+            task = shine_pb2.Task()
+            task.node_id = self.node_id
+            task.client_id = conn.id
+            task.client_ip = conn.address[0]
+            task.uid = conn.uid
+            task.userdata = conn.userdata
+            task.cmd = constants.CMD_CLIENT_CLOSED
+
             self.conn_dict.pop(conn.id, None)
             if conn.uid is not None:
                 if self.share_store:
@@ -301,12 +312,6 @@ class Gateway(object):
 
                 self.user_dict.pop(conn.uid, None)
                 conn.uid = conn.userdata = 0
-
-            task = shine_pb2.Task()
-            task.node_id = self.node_id
-            task.client_id = conn.id
-            task.client_ip = conn.address[0]
-            task.cmd = constants.CMD_CLIENT_CLOSED
 
             self.task_queue.put(task)
 
@@ -328,6 +333,8 @@ class Gateway(object):
             task.node_id = self.node_id
             task.client_id = conn.id
             task.client_ip = conn.address[0]
+            task.uid = conn.uid
+            task.userdata = conn.userdata
             task.cmd = constants.CMD_CLIENT_REQ
             # 原始数据
             task.body = box._raw_data
