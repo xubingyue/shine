@@ -82,10 +82,10 @@ class Forwarder(object):
         :param subtitle:
         :return:
         """
-        proc_name = '[%s %s:%s] %s' % (
-            self.name,
+        proc_name = '[%s:%s %s] %s' % (
             constants.NAME,
             subtitle,
+            self.name,
             ' '.join([sys.executable] + sys.argv)
         )
 
