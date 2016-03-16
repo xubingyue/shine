@@ -46,9 +46,15 @@ class ShareStore(object):
 
         if old_node_id is None:
             # 没数据当然直接返回啦
-            return
+            return True
 
-        return self.rds.delete(self._make_redis_key(uid))
+        if old_node_id == node_id:
+            # 要删掉的，和里面存储的不一致。说明可能是在别的节点登录了，不能删
+            return False
+
+        self.rds.delete(self._make_redis_key(uid))
+
+        return True
 
     def renew_user(self, uid):
         """

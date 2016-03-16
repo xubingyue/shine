@@ -46,7 +46,7 @@ DEFAULT_CONFIG = {
     'GATEWAY_BACKLOG': 256,
 
     # gateway 需要
-    'GATEWAY_CLIENT_HEARTBEAT_CMD': None,  # 客户端心跳的命令字
+    'GATEWAY_CLIENT_HEARTBEAT_CMD': None,  # 客户端心跳的命令字，redis通过这个cmd来进行续期
 
     # gateway 需要
     'GATEWAY_CLIENT_TIMEOUT': None,  # 客户端连接最长不活跃时间，超过会被关闭
@@ -78,7 +78,8 @@ DEFAULT_CONFIG = {
     # gateway, forwarder 需要
     'REDIS_USER_KEY_PREFIX': 'user:',  # 存储的user键前缀
     # gateway 需要
-    'REDIS_USER_MAXAGE': None,  # user最长存储的秒数，因为有可能有些用户的数据没有正常清空
+    # user最长存储的秒数，因为有可能有些用户的数据没有正常清空。如果不配置，就取GATEWAY_CLIENT_TIMEOUT的两倍
+    'REDIS_USER_MAXAGE': None,
     # gateway, forwarder 需要
     'REDIS_NODES_KEY': 'nodes',  # 存储node_id的集合
 }
