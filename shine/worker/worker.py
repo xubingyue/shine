@@ -92,7 +92,7 @@ class Worker(RoutesMixin, AppEventsMixin):
             self._spawn_workers(self.spawn_count)
         else:
             # 子进程
-            setproctitle.setproctitle(self._make_proc_name('worker:app'))
+            setproctitle.setproctitle(self._make_proc_name('worker:worker'))
             self._worker_run()
 
     def _make_proc_name(self, subtitle):
