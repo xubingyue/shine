@@ -15,10 +15,13 @@ class Connection(object):
 
     address_list = None
     zmq_client = None
+    conn_timeout_ms = None
 
-    def __init__(self, app, address_list):
+    def __init__(self, app, address_list, conn_timeout):
         self.app = app
         self.address_list = address_list
+        # 转换成毫秒
+        self.conn_timeout_ms = conn_timeout * 1000 if conn_timeout else None
 
         ctx = zmq.Context()
         self.zmq_client = ctx.socket(zmq.PULL)
@@ -27,7 +30,7 @@ class Connection(object):
 
     def run(self):
         thread.start_new_thread(self._monitor_work_timeout, ())
-        while 1:
+        while self.app.enable:
             try:
                 self._handle()
             except KeyboardInterrupt:
@@ -55,10 +58,6 @@ class Connection(object):
                     os._exit(-1)
 
     def _handle(self):
-        if not self.app.enable:
-            # 安全退出
-            raise KeyboardInterrupt
-
         self._read_message()
 
     def write(self, data):
@@ -85,7 +84,19 @@ class Connection(object):
 
     def _read_message(self):
 
-        data = self.zmq_client.recv()
+        data = None
+
+        while 1:
+            data = self.zmq_client.poll(self.conn_timeout_ms)
+            if not data:
+                # 超过时间没有拿到数据
+                if not self.app.enable:
+                    return
+                else:
+                    # 继续读
+                    continue
+            else:
+                break
 
         self._on_read_complete(data)
 

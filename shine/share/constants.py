@@ -70,6 +70,9 @@ DEFAULT_CONFIG = {
     'WORKER_RSP_ONCE': True,  # worker只能回应一次
 
     # worker 需要
+    'WORKER_CONN_TIMEOUT': 5,  # 连接超时(秒)，比如recv一次的超时
+
+    # worker 需要
     'WORKER_WORK_TIMEOUT': None,  # 处理超时
 
     # worker 需要

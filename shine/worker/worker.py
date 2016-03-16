@@ -249,7 +249,9 @@ class Worker(RoutesMixin, AppEventsMixin):
         signal.signal(signal.SIGHUP, safe_stop_handler)
 
     def _serve_forever(self):
-        conn = self.connection_class(self, self.config['GATEWAY_INNER_ADDRESS_LIST'])
+        conn = self.connection_class(self,
+                                     self.config['GATEWAY_INNER_ADDRESS_LIST'],
+                                     self.config['WORKER_CONN_TIMEOUT'])
         conn.run()
 
     def _connect_to_forwarder_server(self):
