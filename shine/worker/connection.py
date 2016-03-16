@@ -87,8 +87,8 @@ class Connection(object):
         data = None
 
         while 1:
-            data = self.zmq_client.poll(self.conn_timeout_ms)
-            if not data:
+            flag = self.zmq_client.poll(self.conn_timeout_ms)
+            if flag <= 0:
                 # 超过时间没有拿到数据
                 if not self.app.enable:
                     return
@@ -96,8 +96,10 @@ class Connection(object):
                     # 继续读
                     continue
             else:
+                data = self.zmq_client.recv()
                 break
 
+        logger.debug('data: %r', data)
         self._on_read_complete(data)
 
         if self.closed():
