@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import uuid
-
 import gevent
 
 from ...share.log import logger
+from .timer import Timer
 
 
 class Connection(object):
@@ -18,11 +18,16 @@ class Connection(object):
     # 用户userdata
     userdata = 0
 
+    # 检测过期
+    expire_timer = None
+
     def __init__(self, app, stream, address):
         self.id = uuid.uuid4().bytes
         self.app = app
         self.stream = stream
         self.address = address
+        self.expire_timer = Timer()
+        self._reg_timeout_callback()
         self.app.events.create_conn(self)
 
     def write(self, data):
@@ -88,11 +93,24 @@ class Connection(object):
         data: 原始数据
         box: 解析后的box
         """
+
+        # 每收到一次消息，就进行一次延后
+        self._reg_timeout_callback()
+
         try:
             self.app.events.handle_request(self, box)
         except Exception, e:
             logger.error('view_func raise exception. box: %s, e: %s',
                          box, e, exc_info=True)
+
+    def _reg_timeout_callback(self):
+        """
+        注册超时的回调
+        :return:
+        """
+        if self.app.conn_timeout:
+            # 超时了，就报错
+            self.expire_timer.set(self.app.conn_timeout, self.close)
 
     def __repr__(self):
         return str(self.id)

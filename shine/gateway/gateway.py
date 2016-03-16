@@ -53,7 +53,10 @@ class Gateway(object):
     def __init__(self):
         self.config = Config(defaults=constants.DEFAULT_CONFIG)
         self.proc_mgr = ProcMgr()
-        self.outer_server = Server(self.box_class, self.config['GATEWAY_BACKLOG'])
+        self.outer_server = Server(self.box_class,
+                                   self.config['GATEWAY_BACKLOG'],
+                                   self.config['GATEWAY_CLIENT_TIMEOUT']
+                                   )
         self.task_queue = Queue()
         self.conn_dict = dict()
         self.user_dict = weakref.WeakValueDictionary()
