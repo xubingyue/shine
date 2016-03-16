@@ -45,8 +45,11 @@ DEFAULT_CONFIG = {
     # gateway 需要
     'GATEWAY_BACKLOG': 256,
 
-    # gateway需要
+    # gateway 需要
     'GATEWAY_CLIENT_HEARTBEAT_CMD': None,  # 客户端心跳的命令字
+
+    # gateway 需要
+    'GATEWAY_CLIENT_TIMEOUT': None,  # 客户端连接最长不活跃时间，超过会被关闭
 
     # gateway, worker 需要
     'GATEWAY_INNER_ADDRESS_LIST': None,
@@ -75,7 +78,7 @@ DEFAULT_CONFIG = {
     # gateway, forwarder 需要
     'REDIS_USER_KEY_PREFIX': 'user:',  # 存储的user键前缀
     # gateway 需要
-    'REDIS_USER_MAXAGE': 300,  # user最长存储的秒数，因为有可能有些用户的数据没有正常清空
+    'REDIS_USER_MAXAGE': None,  # user最长存储的秒数，因为有可能有些用户的数据没有正常清空
     # gateway, forwarder 需要
     'REDIS_NODES_KEY': 'nodes',  # 存储node_id的集合
 }
