@@ -79,7 +79,7 @@ DEFAULT_CONFIG = {
     'REDIS_USER_KEY_PREFIX': 'user:',  # 存储的user键前缀
     # gateway 需要
     # user最长存储的秒数，因为有可能有些用户的数据没有正常清空。如果不配置，就取GATEWAY_CLIENT_TIMEOUT的两倍
-    'REDIS_USER_MAXAGE': None,
+    'REDIS_USER_MAX_AGE': None,
     # gateway, forwarder 需要
     'REDIS_NODES_KEY': 'nodes',  # 存储node_id的集合
 }
