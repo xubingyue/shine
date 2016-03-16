@@ -23,6 +23,10 @@ CMD_LOGIN_CLIENT            = 260 # 登录用户
 CMD_LOGOUT_CLIENT           = 270 # 登出用户
 
 
+# 当 REDIS_USER_MAX_AGE 不配置时，默认是 GATEWAY_CLIENT_TIMEOUT 的几倍
+REDIS_USER_MAX_AGE_FACTOR = 2
+
+
 # worker的env
 WORKER_ENV_KEY = 'SHINE_WORKER'
 
