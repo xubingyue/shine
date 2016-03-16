@@ -53,10 +53,6 @@ class Gateway(object):
     def __init__(self):
         self.config = Config(defaults=constants.DEFAULT_CONFIG)
         self.proc_mgr = ProcMgr()
-        self.outer_server = Server(self.box_class,
-                                   self.config['GATEWAY_BACKLOG'],
-                                   self.config['GATEWAY_CLIENT_TIMEOUT']
-                                   )
         self.task_queue = Queue()
         self.conn_dict = dict()
         self.user_dict = weakref.WeakValueDictionary()
@@ -70,6 +66,12 @@ class Gateway(object):
 
         if debug is not None:
             self.debug = debug
+
+        # 要在run的时候，才创建
+        self.outer_server = Server(self.box_class,
+                                   self.config['GATEWAY_BACKLOG'],
+                                   self.config['GATEWAY_CLIENT_TIMEOUT']
+                                   )
 
         if self.config['REDIS_URL']:
             import redis
