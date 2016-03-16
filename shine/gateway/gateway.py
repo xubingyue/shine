@@ -77,7 +77,9 @@ class Gateway(object):
             self.share_store = ShareStore(rds,
                                           self.config['REDIS_KEY_SHARE_PREFIX'] + self.config['REDIS_USER_KEY_PREFIX'],
                                           self.config['REDIS_KEY_SHARE_PREFIX'] + self.config['REDIS_NODES_KEY'],
-                                          self.config['REDIS_USER_MAX_AGE'],
+                                          self.config['REDIS_USER_MAX_AGE'] or (
+                                              self.config['GATEWAY_CLIENT_TIMEOUT'] * 2
+                                              if self.config['GATEWAY_CLIENT_TIMEOUT'] else None)
                                           )
 
         workers = len(self.config['GATEWAY_INNER_ADDRESS_LIST'])
