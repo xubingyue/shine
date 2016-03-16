@@ -281,7 +281,7 @@ class Forwarder(object):
         在worker里面执行的
         :return:
         """
-        setproctitle.setproctitle(self._make_proc_name('forwarder:app:%s' % index))
+        setproctitle.setproctitle(self._make_proc_name('forwarder:worker:%s' % index))
         self._handle_child_proc_signals()
 
         self._start_input_server(self.config['FORWARDER_INPUT_ADDRESS_LIST'][index])

@@ -325,7 +325,7 @@ class Gateway(object):
         在worker里面执行的
         :return:
         """
-        setproctitle.setproctitle(self._make_proc_name('gateway:app:%s' % index))
+        setproctitle.setproctitle(self._make_proc_name('gateway:worker:%s' % index))
         self.node_id = uuid.uuid4().bytes
         if self.share_store:
             self.share_store.add_node(self.node_id)
