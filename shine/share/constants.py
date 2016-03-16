@@ -53,7 +53,7 @@ DEFAULT_CONFIG = {
     'GATEWAY_CLIENT_HEARTBEAT_CMD': None,  # 客户端心跳的命令字，redis通过这个cmd来进行续期
 
     # gateway 需要
-    'GATEWAY_CLIENT_TIMEOUT': None,  # 客户端连接最长不活跃时间，超过会被关闭
+    'GATEWAY_CLIENT_TIMEOUT': None,  # 客户端连接最长不活跃时间，超过会被关闭。可以设置长一点，因为正常的关闭连接可以被检测到的。
 
     # gateway, worker 需要
     'GATEWAY_INNER_ADDRESS_LIST': None,
