@@ -184,34 +184,11 @@ class Gateway(object):
                 conn.close()
         elif task.cmd == constants.CMD_LOGIN_CLIENT:
             conn = self.conn_dict.get(task.client_id)
-            if conn and conn.uid != task.uid:
-                if conn.uid is not None:
-                    # 旧的登录用户
-
-                    # 先从存储删掉
-                    if self.share_store:
-                        gevent.spawn(self.share_store.remove_user, conn.uid, self.node_id)
-
-                    self.user_dict.pop(conn.uid, None)
-                    conn.uid = conn.userdata = 0
-
-                conn.uid = task.uid
-                conn.userdata = task.userdata
-                self.user_dict[conn.uid] = conn
-
-                # 后写入存储
-                if self.share_store:
-                    gevent.spawn(self.share_store.add_user, conn.uid, self.node_id)
+            self._login_client(conn, task.uid, task.userdata)
 
         elif task.cmd == constants.CMD_LOGOUT_CLIENT:
             conn = self.conn_dict.get(task.client_id)
-            if conn:
-                if conn.uid is not None:
-                    if self.share_store:
-                        gevent.spawn(self.share_store.remove_user, conn.uid, self.node_id)
-
-                    self.user_dict.pop(conn.uid, None)
-                    conn.uid = conn.userdata = 0
+            self._logout_client(conn)
 
         elif task.cmd == constants.CMD_WRITE_TO_USERS:
             rsp = shine_pb2.RspToUsers()
@@ -306,12 +283,8 @@ class Gateway(object):
             task.cmd = constants.CMD_CLIENT_CLOSED
 
             self.conn_dict.pop(conn.id, None)
-            if conn.uid is not None:
-                if self.share_store:
-                    gevent.spawn(self.share_store.remove_user, conn.uid, self.node_id)
-
-                self.user_dict.pop(conn.uid, None)
-                conn.uid = conn.userdata = 0
+            # 尝试退出登录
+            self._logout_client(conn)
 
             self.task_queue.put(task)
 
@@ -361,6 +334,26 @@ class Gateway(object):
             pass
         except:
             logger.error('exc occur.', exc_info=True)
+
+    def _login_client(self, conn, uid, userdata):
+        if conn and conn.uid != uid:
+            self._logout_client(conn)
+
+            conn.uid = uid
+            conn.userdata = userdata
+            self.user_dict[conn.uid] = conn
+
+            # 后写入存储
+            if self.share_store:
+                gevent.spawn(self.share_store.add_user, conn.uid, self.node_id)
+
+    def _logout_client(self, conn):
+        if conn and conn.uid is not None:
+            if self.share_store:
+                gevent.spawn(self.share_store.remove_user, conn.uid, self.node_id)
+
+            self.user_dict.pop(conn.uid, None)
+            conn.uid = conn.userdata = 0
 
     def _handle_parent_proc_signals(self):
         def exit_handler(signum, frame):
