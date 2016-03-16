@@ -48,7 +48,7 @@ class ShareStore(object):
             # 没数据当然直接返回啦
             return True
 
-        if old_node_id == node_id:
+        if old_node_id != node_id:
             # 要删掉的，和里面存储的不一致。说明可能是在别的节点登录了，不能删
             return False
 
