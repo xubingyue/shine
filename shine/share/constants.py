@@ -23,6 +23,10 @@ CMD_LOGIN_CLIENT            = 260 # 登录用户
 CMD_LOGOUT_CLIENT           = 270 # 登出用户
 
 
+# 当 REDIS_USER_MAX_AGE 不配置时，默认是 GATEWAY_CLIENT_TIMEOUT 的几倍
+REDIS_USER_MAX_AGE_FACTOR = 2
+
+
 # worker的env
 WORKER_ENV_KEY = 'SHINE_WORKER'
 
@@ -45,8 +49,11 @@ DEFAULT_CONFIG = {
     # gateway 需要
     'GATEWAY_BACKLOG': 256,
 
-    # gateway需要
-    'GATEWAY_CLIENT_HEARTBEAT_CMD': None,  # 客户端心跳的命令字
+    # gateway 需要
+    'GATEWAY_CLIENT_HEARTBEAT_CMD': None,  # 客户端心跳的命令字，redis通过这个cmd来进行续期
+
+    # gateway 需要
+    'GATEWAY_CLIENT_TIMEOUT': None,  # 客户端连接最长不活跃时间，超过会被关闭。可以设置长一点，因为正常的关闭连接可以被检测到的。
 
     # gateway, worker 需要
     'GATEWAY_INNER_ADDRESS_LIST': None,
@@ -75,7 +82,9 @@ DEFAULT_CONFIG = {
     # gateway, forwarder 需要
     'REDIS_USER_KEY_PREFIX': 'user:',  # 存储的user键前缀
     # gateway 需要
-    'REDIS_USER_MAXAGE': 300,  # user最长存储的秒数，因为有可能有些用户的数据没有正常清空
+    # user最长存储的秒数，因为有可能有些用户的数据没有正常清空
+    # 如果不配置，就取 GATEWAY_CLIENT_TIMEOUT 的 REDIS_USER_MAX_AGE_FACTOR 倍
+    'REDIS_USER_MAX_AGE': None,
     # gateway, forwarder 需要
     'REDIS_NODES_KEY': 'nodes',  # 存储node_id的集合
 }

@@ -14,16 +14,18 @@ class Server(AppEventsMixin):
     stream_class = Stream
 
     box_class = None
-    stream_checker = None
+
+    # 连接最长不活跃时间
+    conn_timeout = None
 
     backlog = None
     server = None
 
-    def __init__(self, box_class, backlog):
+    def __init__(self, box_class, backlog, conn_timeout=None):
         AppEventsMixin.__init__(self)
         self.box_class = box_class
         self.backlog = backlog
-        self.stream_checker = self.box_class().check
+        self.conn_timeout = conn_timeout
 
     def _handle_stream(self, sock, address):
         self.connection_class(

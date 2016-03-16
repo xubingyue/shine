@@ -11,9 +11,9 @@ class ShareStore(object):
     rds = None
     user_key_prefix = None
     nodes_key = None
-    user_maxage = None
+    user_max_age = None
 
-    def __init__(self, rds, user_key_prefix, nodes_key, user_maxage=None):
+    def __init__(self, rds, user_key_prefix, nodes_key, user_max_age=None):
         """
         :param rds: redis实例
         :param user_key_prefix: 用户数据的key前缀
@@ -24,7 +24,7 @@ class ShareStore(object):
         self.rds = rds
         self.user_key_prefix = user_key_prefix
         self.nodes_key = nodes_key
-        self.user_maxage = user_maxage
+        self.user_max_age = user_max_age
 
     def add_user(self, uid, node_id):
         """
@@ -33,7 +33,7 @@ class ShareStore(object):
         :param node_id:
         :return:
         """
-        return self.rds.set(self._make_redis_key(uid), node_id, ex=self.user_maxage)
+        return self.rds.set(self._make_redis_key(uid), node_id, ex=self.user_max_age)
 
     def remove_user(self, uid, node_id):
         """
@@ -46,9 +46,15 @@ class ShareStore(object):
 
         if old_node_id is None:
             # 没数据当然直接返回啦
-            return
+            return True
 
-        return self.rds.delete(self._make_redis_key(uid))
+        if old_node_id != node_id:
+            # 要删掉的，和里面存储的不一致。说明可能是在别的节点登录了，不能删
+            return False
+
+        self.rds.delete(self._make_redis_key(uid))
+
+        return True
 
     def renew_user(self, uid):
         """
@@ -56,7 +62,7 @@ class ShareStore(object):
         :param uid:
         :return:
         """
-        return self.rds.expire(self._make_redis_key(uid), self.user_maxage)
+        return self.rds.expire(self._make_redis_key(uid), self.user_max_age)
 
     def get_users(self, uid_list):
         """
