@@ -11,7 +11,7 @@ class ProcMgr(object):
     def __init__(self):
         self.processes = []
 
-    def fork_workers(self, workers, target):
+    def spawn_workers(self, workers, target):
         def start_worker_process(index):
             inner_p = Process(target=target, args=(index,))
             # 当前进程daemon默认是False，改成True将启动不了子进程

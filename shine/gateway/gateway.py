@@ -92,7 +92,7 @@ class Gateway(object):
             setproctitle.setproctitle(self._make_proc_name('gateway:master'))
             # 只能在主线程里面设置signals
             self._handle_parent_proc_signals()
-            self.proc_mgr.fork_workers(workers, self._worker_run)
+            self.proc_mgr.spawn_workers(workers, self._worker_run)
 
         run_wrapper()
 
