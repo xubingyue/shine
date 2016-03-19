@@ -24,6 +24,8 @@ FORWARDER_OUTPUT_ADDRESS_LIST = [
 
 REDIS_URL = 'redis://127.0.0.1:6379/0'
 
+REDIS_USER_MAX_AGE = 600
+
 import logging
 import colorlog
 
