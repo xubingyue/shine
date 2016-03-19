@@ -57,9 +57,7 @@ class Forwarder(object):
             self.share_store = ShareStore(rds,
                                           self.config['REDIS_KEY_SHARE_PREFIX'] + self.config['REDIS_USER_KEY_PREFIX'],
                                           self.config['REDIS_KEY_SHARE_PREFIX'] + self.config['REDIS_NODES_KEY'],
-                                          self.config['REDIS_USER_MAX_AGE'] or (
-                                              self.config['GATEWAY_CLIENT_TIMEOUT'] * constants.REDIS_USER_MAX_AGE_FACTOR
-                                              if self.config['GATEWAY_CLIENT_TIMEOUT'] else None)
+                                          self.config['REDIS_USER_MAX_AGE']
                                           )
 
         if debug is not None:
