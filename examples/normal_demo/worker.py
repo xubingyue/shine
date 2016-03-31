@@ -59,3 +59,8 @@ def close_users(request):
         ret=100,
         body='ok'
     ))
+
+
+@app.route(5)
+def handle_trigger(request):
+    logger.error('from trigger.write_to_worker')

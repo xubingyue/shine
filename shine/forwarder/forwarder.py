@@ -123,7 +123,7 @@ class Forwarder(object):
                     # 随机选择一个node_id
                     node_id_list = self.share_store.get_nodes()
                     if node_id_list:
-                        self.to_send_queue.put((random.choice(node_id_list), data))
+                        self.to_send_queue.put((random.choice(list(node_id_list)), data))
                     else:
                         logger.error('node_id_list is empty.')
 
