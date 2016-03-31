@@ -17,14 +17,14 @@ def handle():
     box = Box()
     box.cmd = 3
 
-    trigger.write_to_users([
-        [(-1,), box]
-    ])
+    #trigger.write_to_users([
+    #    [(-1,), box]
+    #])
 
     box2 = Box()
     box2.cmd = 5
     trigger.write_to_worker(
-        box
+        box2
     )
 
 

@@ -63,4 +63,4 @@ def close_users(request):
 
 @app.route(5)
 def handle_trigger(request):
-    logger.error('from trigger.write_to_worker')
+    logger.error('from trigger.write_to_worker, task:\n%s', request.task)
