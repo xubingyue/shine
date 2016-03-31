@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
+import random
 import signal
 import sys
 import setproctitle
@@ -111,11 +112,21 @@ class Forwarder(object):
             if task.cmd in (constants.CMD_WRITE_TO_CLIENT,
                             constants.CMD_LOGIN_CLIENT,
                             constants.CMD_LOGOUT_CLIENT,
-                            constants.CMD_CLOSE_CLIENT,
-                            constants.CMD_WRITE_TO_WORKER):
+                            constants.CMD_CLOSE_CLIENT):
                 # 原样处理过去
                 # 给data的好处是，就不用再序列化了
                 self.to_send_queue.put((task.node_id, data))
+            elif task.cmd == constants.CMD_WRITE_TO_WORKER:
+                if task.HasField('node_id'):
+                    self.to_send_queue.put((task.node_id, data))
+                else:
+                    # 随机选择一个node_id
+                    node_id_list = self.share_store.get_nodes()
+                    if node_id_list:
+                        self.to_send_queue.put((random.choice(node_id_list), data))
+                    else:
+                        logger.error('node_id_list is empty.')
+
             elif task.cmd == constants.CMD_WRITE_TO_USERS:
                 if not self.share_store:
                     # 直接转发就好
