@@ -93,5 +93,22 @@ def worker(app, config):
     app.run()
 
 
+@cli.command()
+@click.option('-c', '--config', help='config file/module', required=True)
+def clean(config):
+    """
+    清除数据
+    """
+    from shine.share.cleaner import Cleaner
+    app = Cleaner()
+
+    if config.endswith('.py'):
+        app.config.from_pyfile(config)
+    else:
+        app.config.from_object(importlib.import_module(config))
+
+    app.clean_redis()
+
+
 if __name__ == '__main__':
     cli()
