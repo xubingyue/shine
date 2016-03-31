@@ -2,6 +2,7 @@
 
 from ..share.shine_pb2 import Task, RspToUsers, CloseUsers
 from ..share import constants
+from ..share.utils import import_module_or_string
 
 
 class Trigger(object):
@@ -10,11 +11,11 @@ class Trigger(object):
 
     zmq_client = None
 
-    def __init__(self, box_class, forwarder_input_address_list=None, zmq_client=None, use_gevent=False):
+    def __init__(self, box_class=None, forwarder_input_address_list=None, zmq_client=None, use_gevent=False):
 
         assert not (forwarder_input_address_list is zmq_client is None)
 
-        self.box_class = box_class
+        self.box_class = box_class or import_module_or_string(constants.DEFAULT_CONFIG['BOX_CLASS'])
 
         if forwarder_input_address_list is not None:
             if use_gevent:
