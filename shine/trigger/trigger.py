@@ -12,10 +12,17 @@ class Trigger(object):
     zmq_client = None
 
     def __init__(self, box_class=None, forwarder_input_address_list=None, zmq_client=None, use_gevent=False):
+        """
+        :param box_class: module or string
+        :param forwarder_input_address_list:
+        :param zmq_client:
+        :param use_gevent:
+        :return:
+        """
 
         assert not (forwarder_input_address_list is zmq_client is None)
 
-        self.box_class = box_class or import_module_or_string(constants.DEFAULT_CONFIG['BOX_CLASS'])
+        self.box_class = import_module_or_string(box_class or constants.DEFAULT_CONFIG['BOX_CLASS'])
 
         if forwarder_input_address_list is not None:
             if use_gevent:
