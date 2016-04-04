@@ -73,6 +73,9 @@ class ShareStore(object):
         :param uid_list:
         :return:
         """
+        if not uid_list:
+            return dict()
+
         node_id_list = self.rds.mget([self._make_redis_key(uid) for uid in uid_list])
 
         return dict(zip(uid_list, node_id_list))
