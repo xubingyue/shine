@@ -103,52 +103,18 @@ class Request(object):
 
         assert not (self.app.rsp_once and self.responded), 'request has been responded'
 
-        if isinstance(data, self.app.box_class):
-            data = data.pack()
-        elif isinstance(data, dict):
-            data = self.box.map(data).pack()
-
-        task = Task()
-        # 就可以直接通过node_id和client_id来进行识别了
-        task.client_id = self.task.client_id
-        task.node_id = self.task.node_id
-        task.cmd = constants.CMD_WRITE_TO_CLIENT
-        task.body = data
-
-        succ = self.conn.write(task.SerializeToString())
-
-        if succ:
-            # 如果发送成功，就标记为已经回应
-            self.responded = True
-
-        return succ
+        # 如果发送成功，就标记为已经回应
+        self.responded = True
+        return self.trigger.write_to_client(self.task, data)
 
     def close_client(self):
-        task = Task()
-        task.client_id = self.task.client_id
-        task.node_id = self.task.node_id
-        task.cmd = constants.CMD_CLOSE_CLIENT
-
-        return self.conn.write(task.SerializeToString())
+        return self.trigger.close_client(self.task)
 
     def login_client(self, uid, userdata=None):
-
-        task = Task()
-        task.client_id = self.task.client_id
-        task.node_id = self.task.node_id
-        task.cmd = constants.CMD_LOGIN_CLIENT
-        task.uid = uid
-        task.userdata = userdata or 0
-
-        return self.conn.write(task.SerializeToString())
+        return self.trigger.login_client(self.task, uid, userdata)
 
     def logout_client(self):
-        task = Task()
-        task.client_id = self.task.client_id
-        task.node_id = self.task.node_id
-        task.cmd = constants.CMD_LOGOUT_CLIENT
-
-        return self.conn.write(task.SerializeToString())
+        return self.trigger.logout_client(self.task)
 
     def write_to_users(self, data_list):
         """

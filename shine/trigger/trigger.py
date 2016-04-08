@@ -102,3 +102,55 @@ class Trigger(object):
         task.body = data
 
         return self.zmq_client.send(task.SerializeToString())
+
+    def write_to_client(self, req_task, data):
+        """
+        写回
+        :param data: 可以是dict也可以是box
+        :return:
+        """
+
+        if isinstance(data, self.box_class):
+            data = data.pack()
+        elif isinstance(data, dict):
+            req_box = self.box_class()
+            if req_box.unpack(req_task.body) <= 0:
+                # 解析失败了
+                return False
+            data = req_box.map(data).pack()
+
+        task = Task()
+        # 就可以直接通过node_id和client_id来进行识别了
+        task.client_id = req_task.client_id
+        task.node_id = req_task.node_id
+        task.cmd = constants.CMD_WRITE_TO_CLIENT
+        task.body = data
+
+        return self.zmq_client.send(task.SerializeToString())
+
+    def close_client(self, req_task):
+        task = Task()
+        task.client_id = req_task.client_id
+        task.node_id = req_task.node_id
+        task.cmd = constants.CMD_CLOSE_CLIENT
+
+        return self.zmq_client.send(task.SerializeToString())
+
+    def login_client(self, req_task, uid, userdata=None):
+
+        task = Task()
+        task.client_id = req_task.client_id
+        task.node_id = req_task.node_id
+        task.cmd = constants.CMD_LOGIN_CLIENT
+        task.uid = uid
+        task.userdata = userdata or 0
+
+        return self.zmq_client.send(task.SerializeToString())
+
+    def logout_client(self, req_task):
+        task = Task()
+        task.client_id = req_task.client_id
+        task.node_id = req_task.node_id
+        task.cmd = constants.CMD_LOGOUT_CLIENT
+
+        return self.zmq_client.send(task.SerializeToString())
