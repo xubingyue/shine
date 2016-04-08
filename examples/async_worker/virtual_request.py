@@ -10,7 +10,7 @@ class VirtualRequest(object):
 
     task = None
 
-    def __init__(self, task, trigger=None):
+    def __init__(self, task, trigger):
         self.task = task
         self.trigger = trigger
 
