@@ -68,7 +68,7 @@ class Trigger(object):
         task.cmd = constants.CMD_WRITE_TO_USERS
         task.body = msg.SerializeToString()
 
-        return self.zmq_client.send(task.SerializeToString())
+        return self._send_task(task)
 
     def close_users(self, uids, userdata=None):
         msg = CloseUsers()
@@ -79,7 +79,7 @@ class Trigger(object):
         task.cmd = constants.CMD_CLOSE_USERS
         task.body = msg.SerializeToString()
 
-        return self.zmq_client.send(task.SerializeToString())
+        return self._send_task(task)
 
     def write_to_worker(self, data, node_id=None):
         """
@@ -101,7 +101,7 @@ class Trigger(object):
 
         task.body = data
 
-        return self.zmq_client.send(task.SerializeToString())
+        return self._send_task(task)
 
     def write_to_client(self, req_task, data):
         """
@@ -126,7 +126,7 @@ class Trigger(object):
         task.cmd = constants.CMD_WRITE_TO_CLIENT
         task.body = data
 
-        return self.zmq_client.send(task.SerializeToString())
+        return self._send_task(task)
 
     def close_client(self, req_task):
         task = Task()
@@ -134,7 +134,7 @@ class Trigger(object):
         task.node_id = req_task.node_id
         task.cmd = constants.CMD_CLOSE_CLIENT
 
-        return self.zmq_client.send(task.SerializeToString())
+        return self._send_task(task)
 
     def login_client(self, req_task, uid, userdata=None):
 
@@ -145,12 +145,20 @@ class Trigger(object):
         task.uid = uid
         task.userdata = userdata or 0
 
-        return self.zmq_client.send(task.SerializeToString())
+        return self._send_task(task)
 
     def logout_client(self, req_task):
         task = Task()
         task.client_id = req_task.client_id
         task.node_id = req_task.node_id
         task.cmd = constants.CMD_LOGOUT_CLIENT
+
+        return self._send_task(task)
+
+    def _send_task(self, task):
+        """
+        发送
+        :return:
+        """
 
         return self.zmq_client.send(task.SerializeToString())
