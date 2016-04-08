@@ -91,20 +91,6 @@ class AppEventsMixin(object):
         """
 
     @_reg_event_handler
-    def before_response(self, f):
-        """
-        在 stream.write 之前，传入encode之后的data
-        f(conn, response)
-        """
-
-    @_reg_event_handler
-    def after_response(self, f):
-        """
-        在 stream.write 之后，传入encode之后的data
-        f(conn, response)
-        """
-
-    @_reg_event_handler
     def close_conn(self, f):
         """
         worker连接close之后
@@ -180,20 +166,6 @@ class BlueprintEventsMixin(object):
         """
         执行完route对应的view_func后
         f(request, exc)
-        """
-
-    @_reg_event_handler
-    def before_app_response(self, f):
-        """
-        在 stream.write 之前，传入encode之后的data
-        f(conn, response)
-        """
-
-    @_reg_event_handler
-    def after_app_response(self, f):
-        """
-        在 stream.write 之后，传入encode之后的data
-        f(conn, response)
         """
 
     @_reg_event_handler

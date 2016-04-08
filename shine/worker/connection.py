@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import socket
 import thread
 import time
 import zmq
@@ -59,28 +58,6 @@ class Connection(object):
 
     def _handle(self):
         self._read_message()
-
-    def write(self, data):
-        """
-        格式可以支持到frame
-        发送数据    True: 成功   else: 失败
-        """
-        if self.closed():
-            logger.error('connection closed. data: %r', data)
-            return False
-
-        # 只支持字符串
-        self.app.events.before_response(self, data)
-        for bp in self.app.blueprints:
-            bp.events.before_app_response(self, data)
-
-        self.app.forwarder_client.send(data)
-
-        for bp in self.app.blueprints:
-            bp.events.after_app_response(self, data)
-        self.app.events.after_response(self, data)
-
-        return True
 
     def _read_message(self):
 
