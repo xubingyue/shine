@@ -149,7 +149,7 @@ class Forwarder(object):
                         node_id_to_row_dict = dict()
 
                         uid_list = row.uids
-                        if set((-1, -2, -3)) & set(uid_list):
+                        if set((constants.CONNS_AUTHED, constants.ALL, constants.CONNS_UNAUTHED)) & set(uid_list):
                             # 给所有的topic都发一遍就好
                             node_id_list = self.share_store.get_nodes()
                             for node_id in node_id_list:
@@ -198,7 +198,7 @@ class Forwarder(object):
 
                     merged_uid_list = list(rsp.uids)
 
-                    if set((-1, -2, -3)) & set(merged_uid_list):
+                    if set((constants.CONNS_AUTHED, constants.CONNS_ALL, constants.CONNS_UNAUTHED)) & set(merged_uid_list):
                         # 给所有的topic都发一遍就好
                         node_id_list = self.share_store.get_nodes()
                         for node_id in node_id_list:

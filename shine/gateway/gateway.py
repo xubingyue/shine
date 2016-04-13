@@ -200,18 +200,15 @@ class Gateway(object):
             rsp.ParseFromString(task.body)
 
             for row in rsp.rows:
-                # -1: 所有已登录连接
-                # -2: 所有连接
-                # -3: 所有未登陆连接
-                if -1 in row.uids:
+                if constants.CONNS_AUTHED in row.uids:
                     for conn in self.conn_dict.values():
                         if conn and conn.uid and (conn.userdata & row.userdata) == row.userdata:
                             conn.write(row.buf)
-                elif -2 in row.uids:
+                elif constants.CONNS_ALL in row.uids:
                     for conn in self.conn_dict.values():
                         if conn and (conn.userdata & row.userdata) == row.userdata:
                             conn.write(row.buf)
-                elif -3 in row.uids:
+                elif constants.CONNS_UNAUTHED in row.uids:
                     for conn in self.conn_dict.values():
                         if conn and not conn.uid and (conn.userdata & row.userdata) == row.userdata:
                             conn.write(row.buf)
@@ -225,15 +222,15 @@ class Gateway(object):
             rsp = shine_pb2.CloseUsers()
             rsp.ParseFromString(task.body)
 
-            if -1 in rsp.uids:
+            if constants.CONNS_AUTHED in rsp.uids:
                 for conn in self.conn_dict.values():
                     if conn and conn.uid and (conn.userdata & rsp.userdata) == rsp.userdata:
                         conn.close()
-            elif -2 in rsp.uids:
+            elif constants.CONNS_ALL in rsp.uids:
                 for conn in self.conn_dict.values():
                     if conn and (conn.userdata & rsp.userdata) == rsp.userdata:
                         conn.close()
-            elif -3 in rsp.uids:
+            elif constants.CONNS_UNAUTHED in rsp.uids:
                 for conn in self.conn_dict.values():
                     if conn and not conn.uid and (conn.userdata & rsp.userdata) == rsp.userdata:
                         conn.close()

@@ -23,6 +23,12 @@ CMD_LOGIN_CLIENT            = 260 # 登录用户
 CMD_LOGOUT_CLIENT           = 270 # 登出用户
 
 
+# write_to_users / close_users 时的特殊连接集合
+CONNS_AUTHED                = -1 # 所有已登录连接
+CONNS_ALL                   = -2 # 所有连接
+CONNS_UNAUTHED              = -3 # 所有未登录连接
+
+
 # worker的env
 WORKER_ENV_KEY = 'SHINE_WORKER'
 

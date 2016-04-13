@@ -7,6 +7,7 @@ sys.path.insert(0, '../../')
 from netkit.box import Box
 import time
 from shine import Trigger
+from shine.share import constants
 
 import config
 
@@ -18,7 +19,7 @@ def handle():
     box.cmd = 3
 
     trigger.write_to_users([
-        [(-1,), box]
+        [(constants.CONNS_AUTHED,), box]
     ])
 
     box2 = Box()
